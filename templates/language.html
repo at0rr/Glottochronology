@@ -1,0 +1,19 @@
+<html lang="en">
+<head>
+    <title>Язык</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+    <!-- Хедер с картинкой-ссылкой на главную -->
+    <header>
+        <a href="/hello">
+            <img src="/static/img/logo.png" alt="Логотип" width="50" height="50">
+        </a>
+    </header>
+
+    <h1>Информация о языке</h1>
+    <p><a href="/hello">← Назад к списку</a></p>
+    <h2>ID: {{ .language.ID }}</h2>
+    <h2>Название: {{ .language.Title }}</h2>
+</body>
+</html>
