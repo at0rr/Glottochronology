@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лента — {{ .service.Title }}</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+    <div class="mobile-frame">
+        <div class="feed-screen">
+            <video src="{{ .videoURL }}" autoplay muted loop playsinline></video>
+
+            <!-- Лайки справа по центру -->
+            <div class="feed-likes">
+                <span class="feed-likes-count">{{ .likes }}</span>
+                <span class="feed-likes-heart">❤️</span>
+            </div>
+
+            <!-- Оверлей снизу: название, описание с "Еще", поля -->
+            <div class="feed-overlay">
+                <h2>{{ .service.Title }} язык</h2>
+
+                <details class="feed-details">
+                    <summary class="feed-summary">
+                        <span class="feed-desc-short">{{ .service.Description }}</span>
+                        <span class="feed-more-label">Еще</span>
+                    </summary>
+
+                    <div class="feed-expanded">
+                        <p class="feed-desc-full">{{ .service.Description }}</p>
+                        <p class="feed-field">Характерное число для расчёта: {{ .service.MatchPercent }}%</p>
+                        <p class="feed-field">Дата расхождения: {{ .dateStr }}</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Кнопка "следующий" -->
+            <a href="/feed?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
+        </div>
+
+        <nav class="bottom-nav bottom-nav-overlay">
+            <a href="/feed" class="nav-item active">Лента</a>
+            <a href="/add" class="nav-item">Добавление</a>
+            <a href="/grid" class="nav-item">Плитка</a>
+        </nav>
+    </div>
+</body>
+</html>

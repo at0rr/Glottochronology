@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Все языки</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+    <div class="mobile-frame">
+        <div class="grid-scroll">
+            <h1>Все языки</h1>
+            <form action="/grid" method="GET" class="filter-form">
+                <input type="text" name="date" placeholder="Фильтр по дате расхождения" value="{{ .filter }}">
+                <button type="submit">Готово</button>
+            </form>
+            <div class="grid">
+                {{ range .cards }}
+                <a href="/feed?id={{ .ID }}" class="card">
+                    <img src="{{ .ImageURL }}" alt="{{ .Title }}">
+                    <div class="card-body">
+                        <h3>{{ .Title }} язык</h3>
+                        <p>Дата: {{ .DateStr }}</p>
+                        <span class="card-likes">{{ .Likes }} ❤️</span>
+                    </div>
+                </a>
+                {{ end }}
+            </div>
+        </div>
+        <nav class="bottom-nav">
+            <a href="/feed" class="nav-item">Лента</a>
+            <a href="/add" class="nav-item">Добавление</a>
+            <a href="/grid" class="nav-item active">Плитка</a>
+        </nav>
+    </div>
+</body>
+</html>

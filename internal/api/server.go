@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"glottochronology/internal/app/handler"
 	"glottochronology/internal/app/repository"
 )
@@ -12,29 +11,29 @@ import (
 func StartServer() {
 	log.Println("Starting server")
 
-	// Инициализация репозитория
 	repo, err := repository.NewRepository()
 	if err != nil {
-		logrus.Error("Ошибка инициализации репозитория")
+		log.Println("Ошибка инициализации репозитория:", err)
+		return
 	}
 
-	// Инициализация хендлера
 	h := handler.NewHandler(repo)
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
-
 	r.Static("/static", "./resources")
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
+	r.GET("/feed", h.FeedHandler)
+	r.GET("/add", h.AddHandler)
+	r.GET("/grid", h.GridHandler)
+
+	// Редирект с корня на ленту
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(302, "/feed")
 	})
 
-	// Используем хендлер
-	r.GET("/hello", h.GetLanguages)
-
-	r.GET("/language/:id", h.GetLanguage)
-
-	r.Run()
+	if err := r.Run(); err != nil {
+		log.Println("Ошибка запуска сервера:", err)
+	}
 	log.Println("Server down")
 }
