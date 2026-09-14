@@ -11,36 +11,56 @@
         <div class="add-scroll">
             <h1>Добавить язык</h1>
 
-            <div class="form-group">
-                <label>Фото</label>
-                <img src="{{ .imageURL }}" alt="{{ .service.Title }}" class="preview">
-            </div>
+            {{ if not .hasDraft }}
+            <!-- Нет черновика — форма создания -->
+            <form action="/add" method="POST">
+                <div class="form-group">
+                    <label>Название языка</label>
+                    <input type="text" name="title" placeholder="Введите название" required>
+                </div>
+                <p class="feed-field" style="color:#666;">Фото и видео можно будет загрузить позднее. Пока отображаются дефолтные.</p>
+                <button type="submit" class="form-btn">Далее</button>
+            </form>
+            {{ else }}
+            <!-- Есть черновик — форма публикации -->
+            <form action="/publish" method="POST">
+                <input type="hidden" name="id" value="{{ .service.ID }}">
 
-            <div class="form-group">
-                <label>Видео</label>
-                <video src="{{ .videoURL }}" controls class="preview"></video>
-            </div>
+                <div class="form-group">
+                    <label>Фото</label>
+                    <img src="{{ .imageURL }}" alt="Фото" class="preview">
+                </div>
 
-            <div class="form-group">
-                <label>Название языка</label>
-                <input type="text" value="{{ .service.Title }}" readonly>
-            </div>
+                <div class="form-group">
+                    <label>Видео</label>
+                    <video src="{{ .videoURL }}" controls class="preview"></video>
+                </div>
 
-            <div class="form-group">
-                <label>Описание</label>
-                <input type="text" value="{{ .service.Description }}" readonly>
-            </div>
+                <div class="form-group">
+                    <label>Название языка</label>
+                    <input type="text" name="title" value="{{ .service.Title }}" required>
+                </div>
 
-            <div class="form-group">
-                <label>Характерное число</label>
-                <input type="text" value="{{ .service.MatchPercent }}%" readonly>
-            </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <input type="text" name="description" value="{{ .service.Description }}">
+                </div>
 
-            <div class="form-group">
-                <label>Дата расхождения</label>
-                <input type="text" value="{{ .dateStr }}" readonly>
-            </div>
+                <div class="form-group">
+                    <label>Характерное число</label>
+                    <input type="number" name="match_percent" value="{{ .service.MatchPercent }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Дата расхождения</label>
+                    <input type="date" name="divergence_date" value="2024-01-01">
+                </div>
+
+                <button type="submit" class="form-btn">Опубликовать</button>
+            </form>
+            {{ end }}
         </div>
+
         <nav class="bottom-nav">
             <a href="/feed" class="nav-item">Лента</a>
             <a href="/add" class="nav-item active">Добавление</a>

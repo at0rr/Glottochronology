@@ -11,13 +11,11 @@
         <div class="feed-screen">
             <video src="{{ .videoURL }}" autoplay muted loop playsinline></video>
 
-            <!-- Лайки справа по центру -->
             <div class="feed-likes">
                 <span class="feed-likes-count">{{ .likes }}</span>
                 <span class="feed-likes-heart">❤️</span>
             </div>
 
-            <!-- Оверлей снизу: название, описание с "Еще", поля -->
             <div class="feed-overlay">
                 <h2>{{ .service.Title }} язык</h2>
 
@@ -26,7 +24,6 @@
                         <span class="feed-desc-short">{{ .service.Description }}</span>
                         <span class="feed-more-label">Еще</span>
                     </summary>
-
                     <div class="feed-expanded">
                         <p class="feed-desc-full">{{ .service.Description }}</p>
                         <p class="feed-field">Характерное число для расчёта: {{ .service.MatchPercent }}%</p>
@@ -35,7 +32,6 @@
                 </details>
             </div>
 
-            <!-- Кнопка "следующий" -->
             <a href="/feed?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
         </div>
 

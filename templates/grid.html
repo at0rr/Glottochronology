@@ -16,14 +16,20 @@
             </form>
             <div class="grid">
                 {{ range .cards }}
-                <a href="/feed?id={{ .ID }}" class="card">
-                    <img src="{{ .ImageURL }}" alt="{{ .Title }}">
-                    <div class="card-body">
-                        <h3>{{ .Title }} язык</h3>
-                        <p>Дата: {{ .DateStr }}</p>
-                        <span class="card-likes">{{ .Likes }} ❤️</span>
-                    </div>
-                </a>
+                <div class="card-wrapper">
+                    <a href="/feed?id={{ .ID }}" class="card">
+                        <img src="{{ .ImageURL }}" alt="{{ .Title }}">
+                        <div class="card-body">
+                            <h3>{{ .Title }} язык</h3>
+                            <p>Дата: {{ .DateStr }}</p>
+                            <span class="card-likes">{{ .Likes }} ❤️</span>
+                        </div>
+                    </a>
+                    <form action="/delete" method="POST" class="delete-form">
+                        <input type="hidden" name="id" value="{{ .ID }}">
+                        <button type="submit" class="delete-btn" title="Удалить">🗑</button>
+                    </form>
+                </div>
                 {{ end }}
             </div>
         </div>
