@@ -145,50 +145,50 @@ func (h *Handler) GridHandler(c *gin.Context) {
 // Создание новой услуги-черновика. Из формы берём только название.
 // Фото и видео в этой лабе НЕ сохраняются и НЕ передаются на сервер.
 func (h *Handler) CreateDraftHandler(c *gin.Context) {
-	title := c.PostForm("title")
+    title := c.PostForm("title")  // берём только название
 
-	lang := &ds.Language{
-		Title:          title,
-		Description:    "",
-		Status:         "draft",
-		ImageURL:       "",
-		VideoURL:       "",
-		MatchPercent:   0,
-		DivergenceDate: time.Now(),
-		CreatorID:      currentUserID,
-	}
+    lang := &ds.Language{
+        Title:          title,
+        Description:    "",
+        Status:         "draft",
+        ImageURL:       "",
+        VideoURL:       "",
+        MatchPercent:   0,
+        DivergenceDate: time.Now(),
+        CreatorID:      currentUserID,
+    }
 
-	if err := h.Repository.CreateLanguage(lang); err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
-		return
-	}
+    if err := h.Repository.CreateLanguage(lang); err != nil {
+        h.errorHandler(c, http.StatusInternalServerError, err)
+        return
+    }
 
-	c.Redirect(http.StatusFound, "/add")
+    c.Redirect(http.StatusFound, "/add")
 }
 
 // --- POST /publish ---
 // Публикация: заполняем описание, оба поля по теме.
 func (h *Handler) PublishHandler(c *gin.Context) {
-	idStr := c.PostForm("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.String(http.StatusBadRequest, "Неверный ID")
-		return
-	}
+    idStr := c.PostForm("id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        c.String(http.StatusBadRequest, "Неверный ID")
+        return
+    }
 
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	matchStr := c.PostForm("match_percent")
-	divDate := c.PostForm("divergence_date")
+    title := c.PostForm("title")
+    description := c.PostForm("description")
+    matchStr := c.PostForm("match_percent")
+    divDate := c.PostForm("divergence_date")
 
-	match, _ := strconv.Atoi(matchStr)
+    match, _ := strconv.Atoi(matchStr)
 
-	if err := h.Repository.PublishLanguage(uint(id), title, description, match, divDate); err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
-		return
-	}
+    if err := h.Repository.PublishLanguage(uint(id), title, description, match, divDate); err != nil {
+        h.errorHandler(c, http.StatusInternalServerError, err)
+        return
+    }
 
-	c.Redirect(http.StatusFound, "/grid")
+    c.Redirect(http.StatusFound, "/grid")
 }
 
 // --- POST /delete ---

@@ -39,3 +39,449 @@
 .delete-btn:hover {
     background: #FFDDDD;
 }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+html, body {
+    background: #E5E5E5;
+    color: #000000;
+    min-height: 100vh;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 0;
+}
+
+/* ====== Мобильный фрейм 390×844 ====== */
+.mobile-frame {
+    position: relative;
+    width: 390px;
+    height: 844px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ====== Панель вкладок ====== */
+.bottom-nav {
+    flex-shrink: 0;
+    width: 100%;
+    height: 70px;
+    background: #FFFFFF;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #DDDDDD;
+    z-index: 10;
+}
+
+.nav-item {
+    text-decoration: none;
+    color: #FFFFFF;
+    background: #93358D;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.nav-item.active {
+    background: #D9D9D9;
+    color: #333333;
+}
+
+.nav-item.active:hover {
+    background: #D9D9D9;
+    color: #333333;
+}
+
+.nav-item:hover {
+    background: #195DE1;
+    color: #FFFFFF;
+}
+
+/* ====== ЛЕНТА (TikTok-style) ====== */
+.feed-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000000;
+    overflow: hidden;
+}
+
+.feed-screen video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.feed-likes {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    color: #93358D;
+    padding: 10px 12px;
+    border-radius: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.feed-likes-count {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.feed-likes-heart {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.feed-overlay {
+    position: absolute;
+    left: 0;
+    bottom: 70px;
+    width: 100%;
+    padding: 20px;
+    padding-right: 80px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+    color: #FFFFFF;
+    z-index: 5;
+}
+
+.feed-overlay h2 {
+    color: #FFFFFF;
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.feed-details {
+    margin-bottom: 0;
+}
+
+.feed-summary {
+    cursor: pointer;
+    list-style: none;
+    color: #EEEEEE;
+    font-size: 14px;
+    line-height: 1.4;
+    display: block;
+}
+
+.feed-summary::-webkit-details-marker { display: none; }
+.feed-summary::marker { content: ""; }
+
+.feed-desc-short {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.feed-more-label {
+    color: #9FC9EA;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 3px;
+}
+
+details[open] .feed-desc-short,
+details[open] .feed-more-label {
+    display: none;
+}
+
+.feed-expanded {
+    margin-top: 4px;
+}
+
+.feed-desc-full {
+    color: #EEEEEE;
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.feed-field {
+    font-size: 14px;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+}
+
+.feed-next-btn {
+    position: absolute;
+    right: 18px;
+    bottom: 100px;
+    z-index: 6;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #195DE1;
+    color: #FFFFFF;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: bold;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.feed-next-btn:hover {
+    background: #93358D;
+    transform: translateX(4px);
+}
+
+.bottom-nav-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+}
+
+/* ====== ДОБАВЛЕНИЕ ====== */
+.add-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.add-scroll h1 {
+    color: #93358D;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: #93358D;
+    font-size: 17px;
+    margin-bottom: 6px;
+    font-weight: normal;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #9FC9EA;
+    color: #000000;
+    font-size: 15px;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.preview {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #EEE;
+}
+
+.form-btn {
+    width: 100%;
+    background: #195DE1;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+
+.form-btn:hover {
+    background: #93358D;
+}
+
+.hint-text {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 10px 0;
+}
+
+/* ====== ПЛИТКА ====== */
+.grid-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.grid-scroll h1 {
+    color: #93358D;
+    font-size: 26px;
+    margin-bottom: 15px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-form input {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    background: #9FC9EA;
+    font-size: 14px;
+    color: #1E3E6E;
+}
+
+.filter-form input::placeholder {
+    color: #3b5a76;
+}
+
+.filter-form button {
+    background: #195DE1;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.filter-form button:hover {
+    background: #93358D;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.card-wrapper {
+    position: relative;
+}
+
+.card {
+    display: block;
+    text-decoration: none;
+    color: #000000;
+    background: #F5F5F5;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.card img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+}
+
+.card-body {
+    padding: 10px;
+}
+
+.card-body h3 {
+    color: #333333;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.card-body p {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #333333;
+}
+
+.card-likes {
+    color: #93358D;
+    font-weight: bold;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.delete-form {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    margin: 0;
+}
+
+.delete-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s;
+}
+
+.delete-btn:hover {
+    background: #FFDDDD;
+}
+
+/* Заголовки секций формы добавления */
+.form-section-title {
+    color: #93358D;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 18px 0 8px;
+}
+
+.form-section-title:first-child {
+    margin-top: 0;
+}
+
+/* Поля-ссылки делаем чуть темнее и с рамкой, чтобы отличать от обычных */
+.form-group input[type="url"] {
+    background: #EAF4FB;
+    border: 1px solid #9FC9EA;
+}

@@ -14,11 +14,27 @@
             {{ if not .hasDraft }}
             <!-- Нет черновика — форма создания -->
             <form action="/add" method="POST">
+                <div class="form-section-title">Медиа</div>
+
+                <div class="form-group">
+                    <label>Ссылка на изображение</label>
+                    <input type="url" name="image_url"
+                           placeholder="http://localhost:9000/glotto/image.png">
+                </div>
+
+                <div class="form-group">
+                    <label>Ссылка на видео</label>
+                    <input type="url" name="video_url"
+                           placeholder="http://localhost:9000/glotto/video.mp4">
+                </div>
+
+                <div class="form-section-title">Основное</div>
+
                 <div class="form-group">
                     <label>Название языка</label>
                     <input type="text" name="title" placeholder="Введите название" required>
                 </div>
-                <p class="feed-field" style="color:#666;">Фото и видео можно будет загрузить позднее. Пока отображаются дефолтные.</p>
+
                 <button type="submit" class="form-btn">Далее</button>
             </form>
             {{ else }}
@@ -26,15 +42,23 @@
             <form action="/publish" method="POST">
                 <input type="hidden" name="id" value="{{ .service.ID }}">
 
+                <div class="form-section-title">Медиа</div>
+
                 <div class="form-group">
-                    <label>Фото</label>
-                    <img src="{{ .imageURL }}" alt="Фото" class="preview">
+                    <label>Ссылка на изображение</label>
+                    <input type="url" name="image_url"
+                           value="{{ .service.ImageURL }}"
+                           placeholder="http://localhost:9000/glotto/image.png">
                 </div>
 
                 <div class="form-group">
-                    <label>Видео</label>
-                    <video src="{{ .videoURL }}" controls class="preview"></video>
+                    <label>Ссылка на видео</label>
+                    <input type="url" name="video_url"
+                           value="{{ .service.VideoURL }}"
+                           placeholder="http://localhost:9000/glotto/video.mp4">
                 </div>
+
+                <div class="form-section-title">Основное</div>
 
                 <div class="form-group">
                     <label>Название языка</label>
@@ -46,8 +70,10 @@
                     <input type="text" name="description" value="{{ .service.Description }}">
                 </div>
 
+                <div class="form-section-title">Данные по глоттохронологии</div>
+
                 <div class="form-group">
-                    <label>Характерное число</label>
+                    <label>Характерное число (% совпадений)</label>
                     <input type="number" name="match_percent" value="{{ .service.MatchPercent }}">
                 </div>
 
