@@ -11,36 +11,47 @@
         <div class="add-scroll">
             <h1>Добавить язык</h1>
 
+            <div class="form-section-title">Медиа</div>
+
             <div class="form-group">
-                <label>Фото</label>
-                <img src="{{ .imageURL }}" alt="{{ .service.Title }}" class="preview">
+                <label>Ссылка на изображение</label>
+                <input type="url" name="image_url"
+                       value="{{ .imageURL }}"
+                       placeholder="http://localhost:9000/glotto/image.png">
             </div>
 
             <div class="form-group">
-                <label>Видео</label>
-                <video src="{{ .videoURL }}" controls class="preview"></video>
+                <label>Ссылка на видео</label>
+                <input type="url" name="video_url"
+                       value="{{ .videoURL }}"
+                       placeholder="http://localhost:9000/glotto/video.mp4">
             </div>
+
+            <div class="form-section-title">Основное</div>
 
             <div class="form-group">
                 <label>Название языка</label>
-                <input type="text" value="{{ .service.Title }}" readonly>
+                <input type="text" name="title" value="{{ .service.Title }}">
             </div>
 
             <div class="form-group">
                 <label>Описание</label>
-                <input type="text" value="{{ .service.Description }}" readonly>
+                <input type="text" name="description" value="{{ .service.Description }}">
             </div>
 
+            <div class="form-section-title">Данные по глоттохронологии</div>
+
             <div class="form-group">
-                <label>Характерное число</label>
-                <input type="text" value="{{ .service.MatchPercent }}%" readonly>
+                <label>Характерное число (% совпадений)</label>
+                <input type="number" name="match_percent" value="{{ .service.MatchPercent }}">
             </div>
 
             <div class="form-group">
                 <label>Дата расхождения</label>
-                <input type="text" value="{{ .dateStr }}" readonly>
+                <input type="text" name="divergence_date" value="{{ .dateStr }}">
             </div>
         </div>
+
         <nav class="bottom-nav">
             <a href="/feed" class="nav-item">Лента</a>
             <a href="/add" class="nav-item active">Добавление</a>

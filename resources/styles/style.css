@@ -374,3 +374,23 @@ details[open] .feed-more-label {
     font-size: 14px;
     display: inline-block;
 }
+
+/* Заголовки секций формы добавления */
+.form-section-title {
+    color: #93358D;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 18px 0 8px;
+}
+
+.form-section-title:first-child {
+    margin-top: 0;
+}
+
+/* Стиль для поля-ссылки (отличается от обычных input) */
+.form-group input[type="url"] {
+    background: #EAF4FB;
+    border: 1px solid #9FC9EA;
+}
