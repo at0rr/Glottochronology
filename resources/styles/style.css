@@ -132,18 +132,26 @@ body {
     display: block;
 }
 
-.feed-likes {
+/* Правая вертикальная панель */
+.feed-side {
     position: absolute;
-    right: 15px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 6;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 16px;
+}
+
+.feed-likes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: rgba(255, 255, 255, 0.95);
     color: #93358D;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-radius: 24px;
     font-weight: bold;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -155,8 +163,38 @@ body {
 }
 
 .feed-likes-heart {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
+}
+
+.feed-params {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.feed-param {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    min-width: 70px;
+}
+
+.feed-param-value {
+    font-weight: bold;
+    color: #195DE1;
+    font-size: 14px;
+}
+
+.feed-param-label {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    margin-top: 2px;
 }
 
 .feed-overlay {
@@ -484,4 +522,15 @@ details[open] .feed-more-label {
 .form-group input[type="url"] {
     background: #EAF4FB;
     border: 1px solid #9FC9EA;
+}
+
+.year-select {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    background: #9FC9EA;
+    font-size: 14px;
+    color: #1E3E6E;
+    cursor: pointer;
 }

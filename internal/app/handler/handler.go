@@ -17,19 +17,20 @@ func NewHandler(r *repository.Repository) *Handler {
 
 // RegisterHandler — все маршруты
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// 3 GET
-	router.GET("/feed", h.FeedHandler)
-	router.GET("/add", h.AddHandler)
-	router.GET("/grid", h.GridHandler)
+	// GET
+	router.GET("/languages", h.FeedHandler)
+	router.GET("/languages/new", h.AddHandler)
+	router.GET("/languages/publish", h.PublishFormHandler) // ← ВОТ ЭТОТ МАРШРУТ
+	router.GET("/languages/catalog", h.GridHandler)
 
-	// 3 POST
-	router.POST("/add", h.CreateDraftHandler)
-	router.POST("/publish", h.PublishHandler)
-	router.POST("/delete", h.DeleteHandler)
+	// POST
+	router.POST("/languages/new", h.CreateDraftHandler)
+	router.POST("/languages/publish", h.PublishHandler)
+	router.POST("/languages/delete", h.DeleteHandler)
 
 	// редирект с корня
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/feed")
+		c.Redirect(302, "/languages")
 	})
 }
 

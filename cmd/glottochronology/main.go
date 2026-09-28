@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -15,6 +16,11 @@ import (
 
 func main() {
 	_ = godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("godotenv error:", err)
+	}
+	fmt.Println("DB_HOST =", os.Getenv("DB_HOST"))
 
 	router := gin.Default()
 

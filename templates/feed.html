@@ -11,14 +11,25 @@
         <div class="feed-screen">
             <video src="{{ .videoURL }}" autoplay muted loop playsinline></video>
 
-            <div class="feed-likes">
-                <span class="feed-likes-count">{{ .likes }}</span>
-                <span class="feed-likes-heart">❤️</span>
+            <div class="feed-side">
+                <div class="feed-likes">
+                    <span class="feed-likes-count">{{ .likes }}</span>
+                    <span class="feed-likes-heart">❤️</span>
+                </div>
+                <div class="feed-params">
+                    <div class="feed-param">
+                        <span class="feed-param-value">{{ .service.MatchPercent }}%</span>
+                        <span class="feed-param-label">совпадений</span>
+                    </div>
+                    <div class="feed-param">
+                        <span class="feed-param-value">{{ .dateStr }}</span>
+                        <span class="feed-param-label">расхождение</span>
+                    </div>
+                </div>
             </div>
 
             <div class="feed-overlay">
                 <h2>{{ .service.Title }} язык</h2>
-
                 <details class="feed-details">
                     <summary class="feed-summary">
                         <span class="feed-desc-short">{{ .service.Description }}</span>
@@ -26,19 +37,17 @@
                     </summary>
                     <div class="feed-expanded">
                         <p class="feed-desc-full">{{ .service.Description }}</p>
-                        <p class="feed-field">Характерное число для расчёта: {{ .service.MatchPercent }}%</p>
-                        <p class="feed-field">Дата расхождения: {{ .dateStr }}</p>
                     </div>
                 </details>
             </div>
 
-            <a href="/feed?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
+            <a href="/languages?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
         </div>
 
         <nav class="bottom-nav bottom-nav-overlay">
-            <a href="/feed" class="nav-item active">Лента</a>
-            <a href="/add" class="nav-item">Добавление</a>
-            <a href="/grid" class="nav-item">Плитка</a>
+            <a href="/languages" class="nav-item active">Лента</a>
+            <a href="/languages/new" class="nav-item">Добавление</a>
+            <a href="/languages/catalog" class="nav-item">Плитка</a>
         </nav>
     </div>
 </body>

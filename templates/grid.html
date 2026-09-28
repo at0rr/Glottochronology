@@ -10,14 +10,19 @@
     <div class="mobile-frame">
         <div class="grid-scroll">
             <h1>Все языки</h1>
-            <form action="/grid" method="GET" class="filter-form">
-                <input type="text" name="date" placeholder="Фильтр по дате расхождения" value="{{ .filter }}">
-                <button type="submit">Готово</button>
+            <form action="/languages/catalog" method="GET" class="filter-form">
+                <select name="year" class="year-select">
+                    <option value="">Все годы</option>
+                    {{ range .years }}
+                    <option value="{{ . }}" {{ if eq (printf "%d" .) $.filter }}selected{{ end }}>{{ . }}</option>
+                    {{ end }}
+                </select>
+                <button type="submit">Показать</button>
             </form>
             <div class="grid">
                 {{ range .cards }}
                 <div class="card-wrapper">
-                    <a href="/feed?id={{ .ID }}" class="card">
+                    <a href="/languages?id={{ .ID }}" class="card">
                         <img src="{{ .ImageURL }}" alt="{{ .Title }}">
                         <div class="card-body">
                             <h3>{{ .Title }} язык</h3>
@@ -25,7 +30,7 @@
                             <span class="card-likes">{{ .Likes }} ❤️</span>
                         </div>
                     </a>
-                    <form action="/delete" method="POST" class="delete-form">
+                    <form action="/languages/delete" method="POST" class="delete-form">
                         <input type="hidden" name="id" value="{{ .ID }}">
                         <button type="submit" class="delete-btn" title="Удалить">🗑</button>
                     </form>
@@ -34,9 +39,9 @@
             </div>
         </div>
         <nav class="bottom-nav">
-            <a href="/feed" class="nav-item">Лента</a>
-            <a href="/add" class="nav-item">Добавление</a>
-            <a href="/grid" class="nav-item active">Плитка</a>
+            <a href="/languages" class="nav-item">Лента</a>
+            <a href="/languages/new" class="nav-item">Добавление</a>
+            <a href="/languages/catalog" class="nav-item active">Плитка</a>
         </nav>
     </div>
 </body>

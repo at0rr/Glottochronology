@@ -115,3 +115,16 @@ func (r *Repository) DeleteLanguage(id uint) error {
 	}
 	return nil
 }
+
+// GetUniqueDivergenceYears возвращает уникальные годы расхождения из БД
+func (r *Repository) GetUniqueDivergenceYears() ([]int, error) {
+	var years []int
+	err := r.db.Model(&ds.Language{}).
+		Where("status = ?", "published").
+		Distinct().
+		Pluck("EXTRACT(YEAR FROM divergence_date)::int", &years).Error
+	if err != nil {
+		return nil, err
+	}
+	return years, nil
+}
