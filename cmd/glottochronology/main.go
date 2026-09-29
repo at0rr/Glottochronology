@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -16,25 +17,30 @@ import (
 
 func main() {
 	_ = godotenv.Load()
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("godotenv error:", err)
-	}
-	fmt.Println("DB_HOST =", os.Getenv("DB_HOST"))
 
 	router := gin.Default()
 
 	dbString := dsn.FromEnv()
 	fmt.Println("DSN:", dbString)
 
-	rep, err := repository.New(dbString)
+	useSSL, _ := strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
+
+	rep, err := repository.New(repository.Settings{
+		PostgresDSN:    dbString,
+		MinioEndpoint:  os.Getenv("MINIO_ENDPOINT"),
+		MinioAccessKey: os.Getenv("MINIO_ACCESS_KEY"),
+		MinioSecretKey: os.Getenv("MINIO_SECRET_KEY"),
+		MinioBucket:    os.Getenv("MINIO_BUCKET"),
+		MinioUseSSL:    useSSL,
+		MinioPublicURL: os.Getenv("MINIO_PUBLIC_URL"),
+	})
 	if err != nil {
 		logrus.Fatalf("error initializing repository: %v", err)
 	}
 
-	hand := handler.NewHandler(rep)
-	hand.RegisterStatic(router)
-	hand.RegisterHandler(router)
+	h := handler.NewHandler(rep)
+	h.RegisterStatic(router)
+	h.RegisterHandler(router)
 
 	log.Println("Application start!")
 	if err := router.Run(":8080"); err != nil {

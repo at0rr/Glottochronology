@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -10,37 +9,36 @@ import (
 	"glottochronology/internal/app/ds"
 )
 
-// GetAllPublished — все опубликованные услуги (кроме deleted)
-func (r *Repository) GetAllPublished() ([]ds.Language, error) {
+// GetAllPublished с фильтром по году/десятилетию/столетию
+func (r *Repository) GetAllPublished(mode string, value int, hasFilter bool) ([]ds.Language, error) {
 	var langs []ds.Language
-	err := r.db.Where("status = ?", "published").Order("id").Find(&langs).Error
-	if err != nil {
-		return nil, err
+	q := r.db.Where("status = ?", "published")
+
+	if hasFilter {
+		switch mode {
+		case "year":
+			q = q.Where("EXTRACT(YEAR FROM divergence_date) = ?", value)
+		case "decade":
+			q = q.Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", value, value+9)
+		case "century":
+			q = q.Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", value, value+99)
+		}
 	}
-	return langs, nil
+	err := q.Order("id").Find(&langs).Error
+	return langs, err
 }
 
-// GetByID — одна услуга по ID (любого статуса кроме deleted)
+// GetByID — одна услуга по ID (не deleted)
 func (r *Repository) GetByID(id int) (*ds.Language, error) {
-	query := `SELECT id, title, description, status, image_url, video_url,
-	                 match_percent, divergence_date, date_create, date_formation, creator_id
-	          FROM languages WHERE id = $1 AND status != 'deleted'`
-
-	row := r.db.Raw(query, id).Row()
-
-	lang := &ds.Language{}
-	err := row.Scan(
-		&lang.ID, &lang.Title, &lang.Description, &lang.Status,
-		&lang.ImageURL, &lang.VideoURL, &lang.MatchPercent,
-		&lang.DivergenceDate, &lang.DateCreate, &lang.DateFormation, &lang.CreatorID,
-	)
+	var lang ds.Language
+	err := r.db.Where("id = ? AND status <> ?", id, "deleted").First(&lang).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return lang, nil
+	return &lang, nil
 }
 
 // GetNextAfterID — следующая опубликованная после указанного ID
@@ -48,81 +46,63 @@ func (r *Repository) GetNextAfterID(id int) (*ds.Language, error) {
 	var lang ds.Language
 	err := r.db.Where("status = ? AND id > ?", "published", id).
 		Order("id").First(&lang).Error
-	if err != nil {
-		return nil, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
-	return &lang, nil
+	return &lang, err
 }
 
-// GetDraftByCreator — черновик конкретного пользователя
+// GetDraftByCreator — черновик текущего пользователя
 func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Language, error) {
 	var lang ds.Language
 	err := r.db.Where("status = ? AND creator_id = ?", "draft", creatorID).
 		First(&lang).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
-	return &lang, nil
+	return &lang, err
 }
 
-// GetPublishedFilteredByYear — фильтр по точному году
-func (r *Repository) GetPublishedFilteredByYear(year int) ([]ds.Language, error) {
-	var langs []ds.Language
-	err := r.db.Where("status = ?", "published").
-		Where("EXTRACT(YEAR FROM divergence_date) = ?", year).
-		Order("id").Find(&langs).Error
-	return langs, err
-}
-
-// GetPublishedFilteredByDecade — фильтр по десятилетию (year..year+9)
-func (r *Repository) GetPublishedFilteredByDecade(startYear int) ([]ds.Language, error) {
-	var langs []ds.Language
-	err := r.db.Where("status = ?", "published").
-		Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", startYear, startYear+9).
-		Order("id").Find(&langs).Error
-	return langs, err
-}
-
-// GetPublishedFilteredByCentury — фильтр по столетию (year..year+99)
-func (r *Repository) GetPublishedFilteredByCentury(startYear int) ([]ds.Language, error) {
-	var langs []ds.Language
-	err := r.db.Where("status = ?", "published").
-		Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", startYear, startYear+99).
-		Order("id").Find(&langs).Error
-	return langs, err
-}
-
-// GetLikeCount — количество лайков для услуги (для отображения)
+// GetLikeCount — сколько лайков у услуги
 func (r *Repository) GetLikeCount(languageID uint) int64 {
 	var count int64
 	r.db.Model(&ds.Like{}).Where("language_id = ?", languageID).Count(&count)
 	return count
 }
 
-// CreateLanguage — добавление новой услуги-черновика через ORM
-func (r *Repository) CreateLanguage(lang *ds.Language) error {
+// CreateDraft — создание черновика
+func (r *Repository) CreateDraft(lang *ds.Language) error {
 	return r.db.Create(lang).Error
 }
 
-// PublishLanguage — публикация (меняет статус) через ORM
-func (r *Repository) PublishLanguage(id uint, title, description string, matchPercent int, divergenceDate string) error {
-	updates := map[string]interface{}{
-		"status":          "published",
-		"title":           title,
-		"description":     description,
-		"match_percent":   matchPercent,
-		"divergence_date": divergenceDate,
-		"date_formation":  gorm.Expr("now()"),
+// Publish — публикация (только из draft)
+func (r *Repository) Publish(id uint, title, description string, matchPercent int, divergenceDate string) error {
+	result := r.db.Model(&ds.Language{}).
+		Where("id = ? AND status = ?", id, "draft").
+		Updates(map[string]interface{}{
+			"status":          "published",
+			"title":           title,
+			"description":     description,
+			"match_percent":   matchPercent,
+			"divergence_date": divergenceDate,
+			"date_formation":  gorm.Expr("now()"),
+		})
+
+	if result.Error != nil {
+		return result.Error
 	}
-	return r.db.Model(&ds.Language{}).Where("id = ?", id).Updates(updates).Error
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("черновик с id %d не найден или уже опубликован", id)
+	}
+	return nil
 }
 
-// DeleteLanguage — логическое удаление ЧЕРЕЗ SQL UPDATE (без ORM), как требует задание
-func (r *Repository) DeleteLanguage(id uint) error {
-	result := r.db.Exec("UPDATE languages SET status = 'deleted' WHERE id = $1 AND status != 'deleted'", id)
+// SoftDelete — логическое удаление через SQL UPDATE (по ТЗ — без ORM)
+func (r *Repository) SoftDelete(id uint) error {
+	result := r.db.Exec(
+		"UPDATE languages SET status = 'deleted' WHERE id = $1 AND status <> 'deleted'",
+		id,
+	)
 	if result.Error != nil {
 		return result.Error
 	}

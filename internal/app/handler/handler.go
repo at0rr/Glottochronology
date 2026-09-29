@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -15,28 +17,33 @@ func NewHandler(r *repository.Repository) *Handler {
 	return &Handler{Repository: r}
 }
 
-// RegisterHandler — все маршруты
+// RegisterHandler — регистрация всех API-маршрутов
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// GET
-	router.GET("/languages", h.FeedHandler)
-	router.GET("/languages/new", h.AddHandler)
-	router.GET("/languages/publish", h.PublishFormHandler) // ← ВОТ ЭТОТ МАРШРУТ
-	router.GET("/languages/catalog", h.GridHandler)
+	api := router.Group("/api")
+	{
+		// Услуги
+		api.GET("/languages", h.APIGetLanguages)
+		api.GET("/languages/draft", h.APIGetDraft)
+		api.GET("/languages/feed", h.APIGetFeed)
+		api.GET("/languages/:id", h.APIGetFeed)
+		api.POST("/languages", h.APICreateLanguage)
+		api.PUT("/languages/:id/publish", h.APIPublishLanguage)
+		api.DELETE("/languages/:id", h.APIDeleteLanguage)
+		api.POST("/languages/:id/like", h.APILikeLanguage)
 
-	// POST
-	router.POST("/languages/new", h.CreateDraftHandler)
-	router.POST("/languages/publish", h.PublishHandler)
-	router.POST("/languages/delete", h.DeleteHandler)
+		// Пользователи
+		api.POST("/auth/register", h.APIRegister)
+		api.POST("/auth/login", h.APILogin)
+		api.POST("/auth/logout", h.APILogout)
+	}
 
-	// редирект с корня
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/languages")
+		c.Redirect(http.StatusFound, "/api/languages")
 	})
 }
 
-// RegisterStatic — статика и шаблоны
+// RegisterStatic — статика (картинки-заглушки)
 func (h *Handler) RegisterStatic(router *gin.Engine) {
-	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "./resources")
 }
 

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -9,297 +8,265 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"glottochronology/internal/app/ds"
+	"glottochronology/internal/app/singleton"
 )
 
-// currentUserID — временно захардкоженный ID пользователя.
-// В следующих лабах замените на получение из JWT.
-const currentUserID uint = 1
+// ============ API-обработчики ============
 
-const defaultImage = "/static/img/default.jpg"
-const defaultVideo = "/static/video/default.mp4"
-
-// imageOr — возвращает URL или путь к дефолтной картинке
-func imageOr(url string) string {
-	if url == "" {
-		return defaultImage
-	}
-	return url
-}
-
-func videoOr(url string) string {
-	if url == "" {
-		return defaultVideo
-	}
-	return url
-}
-
-func formatYear(t time.Time) string {
-	y := t.Year()
-	if y < 0 {
-		return strconv.Itoa(-y) + " г. до н.э."
-	}
-	return strconv.Itoa(y) + " г."
-}
-
-func formatYearInt(y int) string {
-	if y < 0 {
-		return strconv.Itoa(-y) + " г. до н.э."
-	}
-	return strconv.Itoa(y) + " г."
-}
-
-// --- GET /feed ---
-func (h *Handler) FeedHandler(c *gin.Context) {
-	idStr := c.Query("id")
-
-	var lang *ds.Language
-	var err error
-
-	if idStr == "" {
-		// если id не указан — берём первую опубликованную
-		all, e := h.Repository.GetAllPublished()
-		if e != nil || len(all) == 0 {
-			c.String(http.StatusNotFound, "Нет услуг")
-			return
-		}
-		lang = &all[0]
-	} else {
-		id, e := strconv.Atoi(idStr)
-		if e != nil {
-			c.String(http.StatusBadRequest, "Неверный ID")
-			return
-		}
-		if c.Query("next") == "true" {
-			next, e := h.Repository.GetNextAfterID(id)
-			if e != nil || next == nil {
-				lang, _ = h.Repository.GetByID(id)
-			} else {
-				lang = next
-			}
-		} else {
-			lang, err = h.Repository.GetByID(id)
-			if err != nil || lang == nil {
-				c.String(http.StatusNotFound, "Услуга не найдена")
-				return
-			}
-		}
-	}
-
-	c.HTML(http.StatusOK, "feed.html", gin.H{
-		"service":  lang,
-		"likes":    h.Repository.GetLikeCount(lang.ID),
-		"imageURL": imageOr(lang.ImageURL),
-		"videoURL": videoOr(lang.VideoURL),
-		"dateStr":  formatYear(lang.DivergenceDate),
-	})
-}
-
-// --- GET /add ---
-func (h *Handler) AddHandler(c *gin.Context) {
-	draft, err := h.Repository.GetDraftByCreator(currentUserID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if draft != nil && draft.ID != 0 {
-		c.Redirect(302, "/languages/publish")
-		return
-	}
-
-	c.HTML(http.StatusOK, "add-step1.html", gin.H{
-		"defaultImage": defaultImage,
-		"defaultVideo": defaultVideo,
-	})
-}
-
-// --- GET /grid ---
-func (h *Handler) GridHandler(c *gin.Context) {
-	mode := c.Query("mode")
-	if mode == "" {
-		mode = "year"
-	}
-
+// GET /api/languages?mode=year&value=500
+func (h *Handler) APIGetLanguages(c *gin.Context) {
+	mode := c.DefaultQuery("mode", "year")
 	valueStr := c.Query("value")
 	hasFilter := valueStr != ""
-
-	var currentValue int
+	value := 0
 	if hasFilter {
-		currentValue, _ = strconv.Atoi(valueStr)
-	} else {
-		currentValue = 1500
+		value, _ = strconv.Atoi(valueStr)
 	}
 
-	if mode == "decade" {
-		currentValue = (currentValue / 10) * 10
-	} else if mode == "century" {
-		currentValue = (currentValue / 100) * 100
-	}
-
-	var langs []ds.Language
-	var err error
-
-	if !hasFilter {
-		langs, err = h.Repository.GetAllPublished()
-	} else {
-		switch mode {
-		case "year":
-			langs, err = h.Repository.GetPublishedFilteredByYear(currentValue)
-		case "decade":
-			langs, err = h.Repository.GetPublishedFilteredByDecade(currentValue)
-		case "century":
-			langs, err = h.Repository.GetPublishedFilteredByCentury(currentValue)
-		default:
-			langs, err = h.Repository.GetAllPublished()
-		}
-	}
-
+	langs, err := h.Repository.GetAllPublished(mode, value, hasFilter)
 	if err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
 		return
 	}
 
-	step := 1
-	switch mode {
-	case "decade":
-		step = 10
-	case "century":
-		step = 100
-	}
-
-	var label string
-	if !hasFilter {
-		label = "Все годы"
-	} else {
-		switch mode {
-		case "year":
-			label = formatYearInt(currentValue)
-		case "decade":
-			label = fmt.Sprintf("%d — %d", currentValue, currentValue+9)
-		case "century":
-			label = fmt.Sprintf("%d — %d", currentValue, currentValue+99)
-		}
-	}
-
-	type card struct {
-		ds.Language
-		ImageURL string
-		DateStr  string
-		Likes    int64
-	}
-
-	var cards []card
+	pubURL := h.Repository.PublicURL()
+	result := make([]ds.LanguageSerializer, 0, len(langs))
 	for _, l := range langs {
-		cards = append(cards, card{
-			Language: l,
-			ImageURL: imageOr(l.ImageURL),
-			DateStr:  formatYear(l.DivergenceDate),
-			Likes:    h.Repository.GetLikeCount(l.ID),
-		})
+		likes := h.Repository.GetLikeCount(l.ID)
+		result = append(result, ds.NewLanguageSerializer(l, likes, pubURL))
 	}
 
-	c.HTML(http.StatusOK, "grid.html", gin.H{
-		"cards":     cards,
-		"mode":      mode,
-		"value":     currentValue,
-		"hasFilter": hasFilter,
-		"prevValue": currentValue - step,
-		"nextValue": currentValue + step,
-		"label":     label,
-	})
+	c.JSON(http.StatusOK, ds.Success(result))
 }
 
-// --- POST /add ---
-// Создание новой услуги-черновика. Из формы берём только название.
-// Фото и видео в этой лабе НЕ сохраняются и НЕ передаются на сервер.
-func (h *Handler) CreateDraftHandler(c *gin.Context) {
-	title := c.PostForm("title")
-	imageURL := c.PostForm("image_url")
-	videoURL := c.PostForm("video_url")
+// GET /api/languages/:id
+// GET /api/languages/:id?next=true — следующая за указанной
+// GET /api/languages/feed — без id, первая опубликованная
+func (h *Handler) APIGetFeed(c *gin.Context) {
+	idStr := c.Param("id")
+	pubURL := h.Repository.PublicURL()
 
-	// если поле пустое — берём локальный путь по умолчанию
-	if imageURL == "" {
-		imageURL = defaultImage
+	// без id → первая опубликованная
+	if idStr == "" {
+		all, err := h.Repository.GetAllPublished("", 0, false)
+		if err != nil || len(all) == 0 {
+			c.JSON(http.StatusNotFound, ds.NewError("нет опубликованных услуг"))
+			return
+		}
+		lang := all[0]
+		var nextID *uint
+		if len(all) > 1 {
+			nextID = &all[1].ID
+		}
+		c.JSON(http.StatusOK, ds.Success(
+			ds.NewFeedSerializer(lang, h.Repository.GetLikeCount(lang.ID), pubURL, nextID),
+		))
+		return
 	}
-	if videoURL == "" {
-		videoURL = defaultVideo
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ds.NewError("неверный id"))
+		return
+	}
+
+	var lang *ds.Language
+	if c.Query("next") == "true" {
+		next, _ := h.Repository.GetNextAfterID(id)
+		if next == nil {
+			lang, _ = h.Repository.GetByID(id)
+		} else {
+			lang = next
+		}
+	} else {
+		lang, _ = h.Repository.GetByID(id)
+	}
+
+	if lang == nil {
+		c.JSON(http.StatusNotFound, ds.NewError("услуга не найдена"))
+		return
+	}
+
+	var nextID *uint
+	if next, _ := h.Repository.GetNextAfterID(int(lang.ID)); next != nil {
+		nextID = &next.ID
+	}
+
+	c.JSON(http.StatusOK, ds.Success(
+		ds.NewFeedSerializer(*lang, h.Repository.GetLikeCount(lang.ID), pubURL, nextID),
+	))
+}
+
+// GET /api/languages/draft — черновик текущего пользователя
+func (h *Handler) APIGetDraft(c *gin.Context) {
+	draft, err := h.Repository.GetDraftByCreator(singleton.CurrentUserID())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
+		return
+	}
+	if draft == nil {
+		c.JSON(http.StatusNotFound, ds.NewError("черновик не найден"))
+		return
+	}
+
+	pubURL := h.Repository.PublicURL()
+	c.JSON(http.StatusOK, ds.Success(
+		ds.NewLanguageSerializer(*draft, h.Repository.GetLikeCount(draft.ID), pubURL),
+	))
+}
+
+// POST /api/languages — создание черновика (multipart/form-data)
+// Поля: title, image (file), video (file)
+func (h *Handler) APICreateLanguage(c *gin.Context) {
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
+		c.JSON(http.StatusBadRequest, ds.NewError("ошибка разбора формы: "+err.Error()))
+		return
+	}
+
+	title := c.PostForm("title")
+	if title == "" {
+		c.JSON(http.StatusBadRequest, ds.NewError("поле title обязательно"))
+		return
+	}
+
+	// Запрещаем создавать второй черновик
+	existing, _ := h.Repository.GetDraftByCreator(singleton.CurrentUserID())
+	if existing != nil {
+		c.JSON(http.StatusConflict, ds.NewError("у пользователя уже есть черновик"))
+		return
+	}
+
+	// Загружаем картинку
+	var imageKey, videoKey string
+	if header, err := c.FormFile("image"); err == nil {
+		key, err := h.Repository.UploadFile(header, "image")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
+			return
+		}
+		imageKey = key
+	}
+	if header, err := c.FormFile("video"); err == nil {
+		key, err := h.Repository.UploadFile(header, "video")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
+			return
+		}
+		videoKey = key
 	}
 
 	lang := &ds.Language{
 		Title:          title,
 		Description:    "",
 		Status:         "draft",
-		ImageURL:       imageURL,
-		VideoURL:       videoURL,
+		ImageKey:       imageKey,
+		VideoKey:       videoKey,
 		MatchPercent:   0,
 		DivergenceDate: time.Now(),
-		CreatorID:      currentUserID,
+		CreatorID:      singleton.CurrentUserID(),
 	}
 
-	if err := h.Repository.CreateLanguage(lang); err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
+	if err := h.Repository.CreateDraft(lang); err != nil {
+		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/publish")
+	c.JSON(http.StatusCreated, ds.Success(
+		ds.NewLanguageSerializer(*lang, 0, h.Repository.PublicURL()),
+	))
 }
 
-func (h *Handler) PublishFormHandler(c *gin.Context) {
-	draft, err := h.Repository.GetDraftByCreator(currentUserID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	if draft == nil {
-		c.Redirect(302, "/languages/new")
-		return
-	}
-
-	c.HTML(http.StatusOK, "add-step2.html", gin.H{
-		"service":  draft,
-		"imageURL": imageOr(draft.ImageURL),
-		"videoURL": videoOr(draft.VideoURL),
-	})
-}
-
-// --- POST /publish ---
-// Публикация: заполняем описание, оба поля по теме.
-func (h *Handler) PublishHandler(c *gin.Context) {
-	idStr := c.PostForm("id")
+// PUT /api/languages/:id/publish — публикация (JSON или form)
+func (h *Handler) APIPublishLanguage(c *gin.Context) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.String(http.StatusBadRequest, "Неверный ID")
+		c.JSON(http.StatusBadRequest, ds.NewError("неверный id"))
 		return
 	}
 
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	matchStr := c.PostForm("match_percent")
-	divDate := c.PostForm("divergence_date")
-	match, _ := strconv.Atoi(matchStr)
+	var body struct {
+		Title          string `json:"title"`
+		Description    string `json:"description"`
+		MatchPercent   int    `json:"match_percent"`
+		DivergenceDate string `json:"divergence_date"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		// fallback на form-data
+		body.Title = c.PostForm("title")
+		body.Description = c.PostForm("description")
+		body.MatchPercent, _ = strconv.Atoi(c.PostForm("match_percent"))
+		body.DivergenceDate = c.PostForm("divergence_date")
+	}
 
-	if err := h.Repository.PublishLanguage(uint(id), title, description, match, divDate); err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
+	if err := h.Repository.Publish(uint(id), body.Title, body.Description, body.MatchPercent, body.DivergenceDate); err != nil {
+		c.JSON(http.StatusBadRequest, ds.NewError(err.Error()))
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/catalog")
+	lang, _ := h.Repository.GetByID(id)
+	if lang == nil {
+		c.JSON(http.StatusInternalServerError, ds.NewError("не удалось получить услугу"))
+		return
+	}
+
+	c.JSON(http.StatusOK, ds.Success(
+		ds.NewLanguageSerializer(*lang, h.Repository.GetLikeCount(lang.ID), h.Repository.PublicURL()),
+	))
 }
 
-// --- POST /delete ---
-// Логическое удаление через SQL UPDATE (без ORM)
-func (h *Handler) DeleteHandler(c *gin.Context) {
-	idStr := c.PostForm("id")
+// DELETE /api/languages/:id — soft delete (SQL UPDATE)
+func (h *Handler) APIDeleteLanguage(c *gin.Context) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.String(http.StatusBadRequest, "Неверный ID")
+		c.JSON(http.StatusBadRequest, ds.NewError("неверный id"))
 		return
 	}
 
-	if err := h.Repository.DeleteLanguage(uint(id)); err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
+	if err := h.Repository.SoftDelete(uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, ds.NewError(err.Error()))
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/catalog")   // ← ЭТА СТРОКА
+	c.JSON(http.StatusOK, ds.Success(map[string]string{"message": "услуга удалена"}))
+}
+
+// POST /api/languages/:id/like — { "like": 0 | 1 }
+func (h *Handler) APILikeLanguage(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ds.NewError("неверный id"))
+		return
+	}
+
+	var body struct {
+		Like int `json:"like"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, ds.NewError("тело должно содержать поле like"))
+		return
+	}
+	if body.Like != 0 && body.Like != 1 {
+		c.JSON(http.StatusBadRequest, ds.NewError("поле like должно быть 0 или 1"))
+		return
+	}
+
+	// Проверим, что услуга есть и не удалена
+	lang, _ := h.Repository.GetByID(id)
+	if lang == nil {
+		c.JSON(http.StatusNotFound, ds.NewError("услуга не найдена"))
+		return
+	}
+
+	if err := h.Repository.SetLike(singleton.CurrentUserID(), uint(id), body.Like); err != nil {
+		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, ds.Success(map[string]interface{}{
+		"likes": h.Repository.GetLikeCount(uint(id)),
+		"liked": h.Repository.HasLike(singleton.CurrentUserID(), uint(id)),
+	}))
 }

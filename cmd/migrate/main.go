@@ -11,14 +11,11 @@ import (
 
 func main() {
 	_ = godotenv.Load()
-
 	db, err := gorm.Open(postgres.Open(dsn.FromEnv()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// ВАЖНО: каскадное удаление запрещено, поэтому используем обычный AutoMigrate.
-	// Никаких OnDelete: CASCADE в моделях нет.
 	err = db.AutoMigrate(
 		&ds.User{},
 		&ds.Language{},
@@ -26,6 +23,16 @@ func main() {
 	)
 	if err != nil {
 		panic("cant migrate db: " + err.Error())
+	}
+
+	// Создаём дефолтного пользователя id=1, если его нет
+	var count int64
+	db.Model(&ds.User{}).Where("login = ?", "default").Count(&count)
+	if count == 0 {
+		u := ds.User{Login: "default", Password: "default"}
+		if err := db.Create(&u).Error; err != nil {
+			panic("error creating default user: " + err.Error())
+		}
 	}
 
 	println("Migration complete")
