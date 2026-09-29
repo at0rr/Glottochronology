@@ -1,0 +1,61 @@
+# Лабораторная работа №3 — веб-сервис отопительного оборудования
+
+## HTTP методы
+
+| № | Метод | URL | Что делает | Успех |
+|---|---|---|---|---|
+| 1 | GET | /api/heating-equipment?name=&min_power=&max_cost= | Список только опубликованных услуг с фильтрацией на бэкенде | 200 |
+| 2 | POST | /api/heating-equipment | Создает черновик, принимает текстовые поля + реальные файлы image и video, сохраняет файлы в MinIO | 201 |
+| 3 | GET | /api/heating-equipment/draft | Получает единственный черновик текущего пользователя, id в URL не передается | 200 / 404 |
+| 4 | PUT | /api/heating-equipment/:id/publish | Публикует только черновик текущего пользователя | 200 / 404 |
+| 5 | GET | /api/heating-equipment/feed | Первая опубликованная услуга ленты | 200 / 404 |
+| 6 | GET | /api/heating-equipment/feed/:id?next=true | Следующая опубликованная услуга после указанного id | 200 / 404 |
+| 7 | POST | /api/heating-equipment/:id/like | {"like":1} ставит лайк, {"like":0} снимает | 200 / 404 |
+| 8 | DELETE | /api/heating-equipment/:id | Soft delete, только услуга текущего пользователя | 200 / 404 |
+| 9 | POST | /api/users | Регистрация пользователя | 201 |
+| 10 | POST | /api/users/auth | Заглушка аутентификации для ЛР4 | 200 |
+| — | POST | /api/users/logout | Заглушка деавторизации для ЛР4 | 200 |
+
+
+
+## Таблицы БД
+
+### `users`
+
+| Поле | Назначение |
+|---|---|
+| id | PK |
+| login | уникальный логин |
+| password_hash | хеш пароля |
+| created_at | дата регистрации |
+
+### `heating_equipment`
+
+| Поле | Назначение |
+|---|---|
+| id | PK |
+| equipment_name | название услуги |
+| short_description | краткое описание |
+| power_kw | мощность |
+| cost_rub | стоимость |
+| image_name | сгенерированное имя изображения в MinIO |
+| video_name | сгенерированное имя видео в MinIO |
+| status | черновик / опубликован / удален |
+| creator_id | создатель |
+| moderator_id | модератор, nullable |
+| created_at | дата создания |
+| formed_at | дата публикации |
+| finished_at | дата завершения/удаления |
+
+Для status='черновик' стоит частичный уникальный индекс по creator_id: у пользователя не может быть двух черновиков.
+
+### `heating_equipment_likes`
+
+| Поле | Назначение |
+|---|---|
+| id | PK |
+| user_id | кто поставил лайк |
+| heating_equipment_id | какой услуге |
+| created_at | дата лайка |
+
+Пара (user_id, heating_equipment_id) уникальна.
