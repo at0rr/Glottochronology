@@ -68,14 +68,30 @@ func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Language, error) {
 	return &lang, nil
 }
 
-// GetPublishedFilteredByDate — фильтр по году
-func (r *Repository) GetPublishedFilteredByDate(dateFilter string) ([]ds.Language, error) {
+// GetPublishedFilteredByYear — фильтр по точному году
+func (r *Repository) GetPublishedFilteredByYear(year int) ([]ds.Language, error) {
 	var langs []ds.Language
-	q := r.db.Where("status = ?", "published")
-	if dateFilter != "" {
-		q = q.Where("EXTRACT(YEAR FROM divergence_date) = ?", dateFilter)
-	}
-	err := q.Order("id").Find(&langs).Error
+	err := r.db.Where("status = ?", "published").
+		Where("EXTRACT(YEAR FROM divergence_date) = ?", year).
+		Order("id").Find(&langs).Error
+	return langs, err
+}
+
+// GetPublishedFilteredByDecade — фильтр по десятилетию (year..year+9)
+func (r *Repository) GetPublishedFilteredByDecade(startYear int) ([]ds.Language, error) {
+	var langs []ds.Language
+	err := r.db.Where("status = ?", "published").
+		Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", startYear, startYear+9).
+		Order("id").Find(&langs).Error
+	return langs, err
+}
+
+// GetPublishedFilteredByCentury — фильтр по столетию (year..year+99)
+func (r *Repository) GetPublishedFilteredByCentury(startYear int) ([]ds.Language, error) {
+	var langs []ds.Language
+	err := r.db.Where("status = ?", "published").
+		Where("EXTRACT(YEAR FROM divergence_date) BETWEEN ? AND ?", startYear, startYear+99).
+		Order("id").Find(&langs).Error
 	return langs, err
 }
 
@@ -114,17 +130,4 @@ func (r *Repository) DeleteLanguage(id uint) error {
 		return fmt.Errorf("услуга с id %d не найдена или уже удалена", id)
 	}
 	return nil
-}
-
-// GetUniqueDivergenceYears возвращает уникальные годы расхождения из БД
-func (r *Repository) GetUniqueDivergenceYears() ([]int, error) {
-	var years []int
-	err := r.db.Model(&ds.Language{}).
-		Where("status = ?", "published").
-		Distinct().
-		Pluck("EXTRACT(YEAR FROM divergence_date)::int", &years).Error
-	if err != nil {
-		return nil, err
-	}
-	return years, nil
 }

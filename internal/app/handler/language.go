@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,6 +35,13 @@ func videoOr(url string) string {
 
 func formatYear(t time.Time) string {
 	y := t.Year()
+	if y < 0 {
+		return strconv.Itoa(-y) + " г. до н.э."
+	}
+	return strconv.Itoa(y) + " г."
+}
+
+func formatYearInt(y int) string {
 	if y < 0 {
 		return strconv.Itoa(-y) + " г. до н.э."
 	}
@@ -107,16 +115,70 @@ func (h *Handler) AddHandler(c *gin.Context) {
 
 // --- GET /grid ---
 func (h *Handler) GridHandler(c *gin.Context) {
-	dateFilter := c.Query("year") // теперь параметр year, а не date
-	langs, err := h.Repository.GetPublishedFilteredByDate(dateFilter)
+	mode := c.Query("mode")
+	if mode == "" {
+		mode = "year"
+	}
+
+	valueStr := c.Query("value")
+	hasFilter := valueStr != ""
+
+	var currentValue int
+	if hasFilter {
+		currentValue, _ = strconv.Atoi(valueStr)
+	} else {
+		currentValue = 1500
+	}
+
+	if mode == "decade" {
+		currentValue = (currentValue / 10) * 10
+	} else if mode == "century" {
+		currentValue = (currentValue / 100) * 100
+	}
+
+	var langs []ds.Language
+	var err error
+
+	if !hasFilter {
+		langs, err = h.Repository.GetAllPublished()
+	} else {
+		switch mode {
+		case "year":
+			langs, err = h.Repository.GetPublishedFilteredByYear(currentValue)
+		case "decade":
+			langs, err = h.Repository.GetPublishedFilteredByDecade(currentValue)
+		case "century":
+			langs, err = h.Repository.GetPublishedFilteredByCentury(currentValue)
+		default:
+			langs, err = h.Repository.GetAllPublished()
+		}
+	}
+
 	if err != nil {
 		h.errorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	years, err := h.Repository.GetUniqueDivergenceYears()
-	if err != nil {
-		years = nil
+	step := 1
+	switch mode {
+	case "decade":
+		step = 10
+	case "century":
+		step = 100
+	}
+
+	var label string
+	if !hasFilter {
+		label = "Все годы"
+	} else {
+		switch mode {
+		case "year":
+			label = formatYearInt(currentValue)
+		case "decade":
+			label = fmt.Sprintf("%d — %d", currentValue, currentValue+9)
+		case "century":
+			label = fmt.Sprintf("%d — %d", currentValue, currentValue+99)
+		}
 	}
 
 	type card struct {
@@ -137,9 +199,13 @@ func (h *Handler) GridHandler(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "grid.html", gin.H{
-		"cards":  cards,
-		"filter": dateFilter,
-		"years":  years,
+		"cards":     cards,
+		"mode":      mode,
+		"value":     currentValue,
+		"hasFilter": hasFilter,
+		"prevValue": currentValue - step,
+		"nextValue": currentValue + step,
+		"label":     label,
 	})
 }
 
