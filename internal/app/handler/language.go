@@ -15,22 +15,30 @@ import (
 // В следующих лабах замените на получение из JWT.
 const currentUserID uint = 1
 
+// Базовый URL для файлов в MinIO.
+// Формируется как <эндпоинт>/<бакет>/
+const minioBaseURL = "http://localhost:9000/glotto/"
+
+// Локальные дефолтные файлы (используются, если ключ пустой)
 const defaultImage = "/static/img/default.jpg"
 const defaultVideo = "/static/video/default.mp4"
 
-// imageOr — возвращает URL или путь к дефолтной картинке
-func imageOr(url string) string {
-	if url == "" {
+// imageURLFor — возвращает полный URL картинки из MinIO
+// или локальный дефолт, если ключ пустой
+func imageURLFor(key string) string {
+	if key == "" {
 		return defaultImage
 	}
-	return url
+	return minioBaseURL + key
 }
 
-func videoOr(url string) string {
-	if url == "" {
+// videoURLFor — возвращает полный URL видео из MinIO
+// или локальный дефолт, если ключ пустой
+func videoURLFor(key string) string {
+	if key == "" {
 		return defaultVideo
 	}
-	return url
+	return minioBaseURL + key
 }
 
 func formatYear(t time.Time) string {
@@ -48,7 +56,7 @@ func formatYearInt(y int) string {
 	return strconv.Itoa(y) + " г."
 }
 
-// --- GET /feed ---
+// --- GET /languages ---
 func (h *Handler) FeedHandler(c *gin.Context) {
 	idStr := c.Query("id")
 
@@ -88,13 +96,13 @@ func (h *Handler) FeedHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "feed.html", gin.H{
 		"service":  lang,
 		"likes":    h.Repository.GetLikeCount(lang.ID),
-		"imageURL": imageOr(lang.ImageURL),
-		"videoURL": videoOr(lang.VideoURL),
+		"imageURL": imageURLFor(lang.ImageKey),
+		"videoURL": videoURLFor(lang.VideoKey),
 		"dateStr":  formatYear(lang.DivergenceDate),
 	})
 }
 
-// --- GET /add ---
+// --- GET /languages/new ---
 func (h *Handler) AddHandler(c *gin.Context) {
 	draft, err := h.Repository.GetDraftByCreator(currentUserID)
 	if err != nil {
@@ -113,7 +121,7 @@ func (h *Handler) AddHandler(c *gin.Context) {
 	})
 }
 
-// --- GET /grid ---
+// --- GET /languages/catalog ---
 func (h *Handler) GridHandler(c *gin.Context) {
 	mode := c.Query("mode")
 	if mode == "" {
@@ -192,7 +200,7 @@ func (h *Handler) GridHandler(c *gin.Context) {
 	for _, l := range langs {
 		cards = append(cards, card{
 			Language: l,
-			ImageURL: imageOr(l.ImageURL),
+			ImageURL: imageURLFor(l.ImageKey),
 			DateStr:  formatYear(l.DivergenceDate),
 			Likes:    h.Repository.GetLikeCount(l.ID),
 		})
@@ -209,15 +217,13 @@ func (h *Handler) GridHandler(c *gin.Context) {
 	})
 }
 
-// --- POST /add ---
-// Создание новой услуги-черновика. Из формы берём только название.
-// Фото и видео в этой лабе НЕ сохраняются и НЕ передаются на сервер.
+// --- POST /languages/new ---
+// Создание черновика: сохраняем название, ссылку на картинку и видео.
 func (h *Handler) CreateDraftHandler(c *gin.Context) {
 	title := c.PostForm("title")
 	imageURL := c.PostForm("image_url")
 	videoURL := c.PostForm("video_url")
 
-	// если поле пустое — берём локальный путь по умолчанию
 	if imageURL == "" {
 		imageURL = defaultImage
 	}
@@ -229,8 +235,8 @@ func (h *Handler) CreateDraftHandler(c *gin.Context) {
 		Title:          title,
 		Description:    "",
 		Status:         "draft",
-		ImageURL:       imageURL,
-		VideoURL:       videoURL,
+		ImageKey:       imageURL,
+		VideoKey:       videoURL,
 		MatchPercent:   0,
 		DivergenceDate: time.Now(),
 		CreatorID:      currentUserID,
@@ -244,6 +250,7 @@ func (h *Handler) CreateDraftHandler(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/languages/publish")
 }
 
+// --- GET /languages/publish ---
 func (h *Handler) PublishFormHandler(c *gin.Context) {
 	draft, err := h.Repository.GetDraftByCreator(currentUserID)
 	if err != nil {
@@ -257,13 +264,12 @@ func (h *Handler) PublishFormHandler(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "add-step2.html", gin.H{
 		"service":  draft,
-		"imageURL": imageOr(draft.ImageURL),
-		"videoURL": videoOr(draft.VideoURL),
+		"imageURL": imageURLFor(draft.ImageKey),
+		"videoURL": videoURLFor(draft.VideoKey),
 	})
 }
 
-// --- POST /publish ---
-// Публикация: заполняем описание, оба поля по теме.
+// --- POST /languages/publish ---
 func (h *Handler) PublishHandler(c *gin.Context) {
 	idStr := c.PostForm("id")
 	id, err := strconv.Atoi(idStr)
@@ -286,7 +292,7 @@ func (h *Handler) PublishHandler(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/languages/catalog")
 }
 
-// --- POST /delete ---
+// --- POST /languages/delete ---
 // Логическое удаление через SQL UPDATE (без ORM)
 func (h *Handler) DeleteHandler(c *gin.Context) {
 	idStr := c.PostForm("id")
@@ -301,5 +307,5 @@ func (h *Handler) DeleteHandler(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/catalog")   // ← ЭТА СТРОКА
+	c.Redirect(http.StatusFound, "/languages/catalog")
 }

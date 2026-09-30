@@ -4,17 +4,20 @@ import "time"
 
 // Language — услуга (список Сводеша для языка)
 type Language struct {
-	ID             uint      `gorm:"primaryKey"`
-	Title          string    `gorm:"type:varchar(100);not null"`   // наименование
-	Description    string    `gorm:"type:varchar(500)"`             // краткое описание
-	Status         string    `gorm:"type:varchar(20);not null"`     // draft / published / deleted
-	ImageURL       string    `gorm:"type:varchar(255)"`             // url к изображению
-	VideoURL       string    `gorm:"type:varchar(255)"`             // url к видео
-	MatchPercent   int       `gorm:"not null;default:0"`            // поле по теме №1
-	DivergenceDate time.Time `gorm:"not null"`                      // поле по теме №2
-	DateCreate     time.Time `gorm:"autoCreateTime"`                // дата создания
-	DateFormation  time.Time `gorm:"autoUpdateTime"`                // дата формирования
-	CreatorID      uint      `gorm:"not null"`                      // создатель
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	Title          string    `gorm:"type:varchar(100);not null" json:"title"`
+	Description    string    `gorm:"type:varchar(500)" json:"description"`
+	Status         string    `gorm:"type:varchar(20);not null" json:"status"`
+	ImageKey       string    `gorm:"column:image_key;type:varchar(255)" json:"image_key"`
+	VideoKey       string    `gorm:"column:video_key;type:varchar(255)" json:"video_key"`
+	MatchPercent   int       `gorm:"not null;default:0" json:"match_percent"`
+	DivergenceDate time.Time `gorm:"not null" json:"divergence_date"`
+	DateCreate     time.Time `gorm:"autoCreateTime" json:"date_create"`
+	DateFormation  time.Time `gorm:"autoUpdateTime" json:"date_formation"`
+	CreatorID      uint      `gorm:"not null" json:"creator_id"`
+}
 
-	Creator User `gorm:"foreignKey:CreatorID"`
+// TableName явно задаёт имя таблицы
+func (Language) TableName() string {
+	return "languages"
 }

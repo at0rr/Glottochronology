@@ -10,19 +10,16 @@ import (
 	"glottochronology/internal/app/ds"
 )
 
-// GetAllPublished — все опубликованные услуги (кроме deleted)
+// GetAllPublished — все опубликованные услуги
 func (r *Repository) GetAllPublished() ([]ds.Language, error) {
 	var langs []ds.Language
 	err := r.db.Where("status = ?", "published").Order("id").Find(&langs).Error
-	if err != nil {
-		return nil, err
-	}
-	return langs, nil
+	return langs, err
 }
 
-// GetByID — одна услуга по ID (любого статуса кроме deleted)
+// GetByID — одна услуга по ID (кроме deleted)
 func (r *Repository) GetByID(id int) (*ds.Language, error) {
-	query := `SELECT id, title, description, status, image_url, video_url,
+	query := `SELECT id, title, description, status, image_key, video_key,
 	                 match_percent, divergence_date, date_create, date_formation, creator_id
 	          FROM languages WHERE id = $1 AND status != 'deleted'`
 
@@ -31,7 +28,7 @@ func (r *Repository) GetByID(id int) (*ds.Language, error) {
 	lang := &ds.Language{}
 	err := row.Scan(
 		&lang.ID, &lang.Title, &lang.Description, &lang.Status,
-		&lang.ImageURL, &lang.VideoURL, &lang.MatchPercent,
+		&lang.ImageKey, &lang.VideoKey, &lang.MatchPercent,
 		&lang.DivergenceDate, &lang.DateCreate, &lang.DateFormation, &lang.CreatorID,
 	)
 	if err != nil {
@@ -49,6 +46,9 @@ func (r *Repository) GetNextAfterID(id int) (*ds.Language, error) {
 	err := r.db.Where("status = ? AND id > ?", "published", id).
 		Order("id").First(&lang).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &lang, nil
@@ -77,7 +77,7 @@ func (r *Repository) GetPublishedFilteredByYear(year int) ([]ds.Language, error)
 	return langs, err
 }
 
-// GetPublishedFilteredByDecade — фильтр по десятилетию (year..year+9)
+// GetPublishedFilteredByDecade — фильтр по десятилетию
 func (r *Repository) GetPublishedFilteredByDecade(startYear int) ([]ds.Language, error) {
 	var langs []ds.Language
 	err := r.db.Where("status = ?", "published").
@@ -86,7 +86,7 @@ func (r *Repository) GetPublishedFilteredByDecade(startYear int) ([]ds.Language,
 	return langs, err
 }
 
-// GetPublishedFilteredByCentury — фильтр по столетию (year..year+99)
+// GetPublishedFilteredByCentury — фильтр по столетию
 func (r *Repository) GetPublishedFilteredByCentury(startYear int) ([]ds.Language, error) {
 	var langs []ds.Language
 	err := r.db.Where("status = ?", "published").
@@ -95,7 +95,7 @@ func (r *Repository) GetPublishedFilteredByCentury(startYear int) ([]ds.Language
 	return langs, err
 }
 
-// GetLikeCount — количество лайков для услуги (для отображения)
+// GetLikeCount — количество лайков для услуги
 func (r *Repository) GetLikeCount(languageID uint) int64 {
 	var count int64
 	r.db.Model(&ds.Like{}).Where("language_id = ?", languageID).Count(&count)
@@ -120,9 +120,12 @@ func (r *Repository) PublishLanguage(id uint, title, description string, matchPe
 	return r.db.Model(&ds.Language{}).Where("id = ?", id).Updates(updates).Error
 }
 
-// DeleteLanguage — логическое удаление ЧЕРЕЗ SQL UPDATE (без ORM), как требует задание
+// DeleteLanguage — логическое удаление ЧЕРЕЗ SQL UPDATE (без ORM)
 func (r *Repository) DeleteLanguage(id uint) error {
-	result := r.db.Exec("UPDATE languages SET status = 'deleted' WHERE id = $1 AND status != 'deleted'", id)
+	result := r.db.Exec(
+		"UPDATE languages SET status = 'deleted' WHERE id = $1 AND status != 'deleted'",
+		id,
+	)
 	if result.Error != nil {
 		return result.Error
 	}
