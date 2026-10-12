@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,19 +26,31 @@ const defaultVideo = "/static/video/default.mp4"
 // imageURLFor — возвращает полный URL картинки из MinIO
 // или локальный дефолт, если ключ пустой
 func imageURLFor(key string) string {
-	if key == "" {
-		return defaultImage
-	}
-	return minioBaseURL + key
+    if key == "" {
+        return defaultImage
+    }
+    if strings.HasPrefix(key, "http://") || strings.HasPrefix(key, "https://") {
+        return key
+    }
+    if strings.HasPrefix(key, "/static/") {
+        return key
+    }
+    return minioBaseURL + key
 }
 
 // videoURLFor — возвращает полный URL видео из MinIO
 // или локальный дефолт, если ключ пустой
 func videoURLFor(key string) string {
-	if key == "" {
-		return defaultVideo
-	}
-	return minioBaseURL + key
+    if key == "" {
+        return defaultVideo
+    }
+    if strings.HasPrefix(key, "http://") || strings.HasPrefix(key, "https://") {
+        return key
+    }
+    if strings.HasPrefix(key, "/static/") {
+        return key
+    }
+    return minioBaseURL + key
 }
 
 func formatYear(t time.Time) string {
@@ -123,98 +135,48 @@ func (h *Handler) AddHandler(c *gin.Context) {
 
 // --- GET /languages/catalog ---
 func (h *Handler) GridHandler(c *gin.Context) {
-	mode := c.Query("mode")
-	if mode == "" {
-		mode = "year"
-	}
+    dateStr := c.Query("date")
 
-	valueStr := c.Query("value")
-	hasFilter := valueStr != ""
+    var langs []ds.Language
+    var err error
 
-	var currentValue int
-	if hasFilter {
-		currentValue, _ = strconv.Atoi(valueStr)
-	} else {
-		currentValue = 1500
-	}
+    if dateStr == "" {
+        langs, err = h.Repository.GetAllPublished()
+    } else {
+        // dateStr = "1500-01-01" → парсим, берём .Year()
+        t, e := time.Parse("2006-01-02", dateStr)
+        if e == nil {
+            langs, err = h.Repository.GetPublishedFilteredByYear(t.Year())
+        } else {
+            langs, err = h.Repository.GetAllPublished()
+        }
+    }
+    if err != nil {
+        h.errorHandler(c, http.StatusInternalServerError, err)
+        return
+    }
 
-	if mode == "decade" {
-		currentValue = (currentValue / 10) * 10
-	} else if mode == "century" {
-		currentValue = (currentValue / 100) * 100
-	}
+    type card struct {
+        ds.Language
+        ImageURL string
+        DateStr  string
+        Likes    int64
+    }
 
-	var langs []ds.Language
-	var err error
+    var cards []card
+    for _, l := range langs {
+        cards = append(cards, card{
+            Language: l,
+            ImageURL: imageURLFor(l.ImageKey),
+            DateStr:  formatYear(l.DivergenceDate),
+            Likes:    h.Repository.GetLikeCount(l.ID),
+        })
+    }
 
-	if !hasFilter {
-		langs, err = h.Repository.GetAllPublished()
-	} else {
-		switch mode {
-		case "year":
-			langs, err = h.Repository.GetPublishedFilteredByYear(currentValue)
-		case "decade":
-			langs, err = h.Repository.GetPublishedFilteredByDecade(currentValue)
-		case "century":
-			langs, err = h.Repository.GetPublishedFilteredByCentury(currentValue)
-		default:
-			langs, err = h.Repository.GetAllPublished()
-		}
-	}
-
-	if err != nil {
-		h.errorHandler(c, http.StatusInternalServerError, err)
-		return
-	}
-
-	step := 1
-	switch mode {
-	case "decade":
-		step = 10
-	case "century":
-		step = 100
-	}
-
-	var label string
-	if !hasFilter {
-		label = "Все годы"
-	} else {
-		switch mode {
-		case "year":
-			label = formatYearInt(currentValue)
-		case "decade":
-			label = fmt.Sprintf("%d — %d", currentValue, currentValue+9)
-		case "century":
-			label = fmt.Sprintf("%d — %d", currentValue, currentValue+99)
-		}
-	}
-
-	type card struct {
-		ds.Language
-		ImageURL string
-		DateStr  string
-		Likes    int64
-	}
-
-	var cards []card
-	for _, l := range langs {
-		cards = append(cards, card{
-			Language: l,
-			ImageURL: imageURLFor(l.ImageKey),
-			DateStr:  formatYear(l.DivergenceDate),
-			Likes:    h.Repository.GetLikeCount(l.ID),
-		})
-	}
-
-	c.HTML(http.StatusOK, "grid.html", gin.H{
-		"cards":     cards,
-		"mode":      mode,
-		"value":     currentValue,
-		"hasFilter": hasFilter,
-		"prevValue": currentValue - step,
-		"nextValue": currentValue + step,
-		"label":     label,
-	})
+    c.HTML(http.StatusOK, "grid.html", gin.H{
+        "cards":  cards,
+        "filter": dateStr,
+    })
 }
 
 // --- POST /languages/new ---

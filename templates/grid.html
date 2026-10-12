@@ -11,27 +11,11 @@
         <div class="grid-scroll">
             <h1>Все языки</h1>
 
-            <!-- Календарь-фильтр по времени -->
-            <div class="filter-calendar">
-                <div class="filter-tabs">
-                    <a href="/languages/catalog?mode=year&value={{ .value }}"
-                       class="filter-tab {{ if eq .mode "year" }}active{{ end }}">Год</a>
-                    <a href="/languages/catalog?mode=decade&value={{ .value }}"
-                       class="filter-tab {{ if eq .mode "decade" }}active{{ end }}">Десятилетие</a>
-                    <a href="/languages/catalog?mode=century&value={{ .value }}"
-                       class="filter-tab {{ if eq .mode "century" }}active{{ end }}">Столетие</a>
-                </div>
-
-                <div class="filter-nav">
-                    <a href="/languages/catalog?mode={{ .mode }}&value={{ .prevValue }}" class="filter-arrow">←</a>
-                    <span class="filter-label">{{ .label }}</span>
-                    <a href="/languages/catalog?mode={{ .mode }}&value={{ .nextValue }}" class="filter-arrow">→</a>
-                </div>
-
-                {{ if .hasFilter }}
-                <a href="/languages/catalog" class="filter-reset">Показать все</a>
-                {{ end }}
-            </div>
+            <!-- Фильтр-выпадашка по годам -->
+            <form action="/languages/catalog" method="GET" class="filter-form">
+                <input type="date" name="date" class="date-input" value="{{ .filter }}">
+                <button type="submit">Показать</button>
+            </form>
 
             <div class="grid">
                 {{ range .cards }}
@@ -46,7 +30,7 @@
                     </a>
                     <form action="/languages/delete" method="POST" class="delete-form">
                         <input type="hidden" name="id" value="{{ .ID }}">
-                        <button type="submit" class="delete-btn" title="Удалить">🗑</button>
+                        <button type="submit" class="delete-btn">Удалить</button>
                     </form>
                 </div>
                 {{ end }}

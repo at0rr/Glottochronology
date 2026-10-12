@@ -134,3 +134,13 @@ func (r *Repository) DeleteLanguage(id uint) error {
 	}
 	return nil
 }
+
+// GetUniqueDivergenceYears — список уникальных годов расхождения
+func (r *Repository) GetUniqueDivergenceYears() ([]int, error) {
+    var years []int
+    err := r.db.Model(&ds.Language{}).
+        Where("status = ?", "published").
+        Distinct().
+        Pluck("EXTRACT(YEAR FROM divergence_date)::int", &years).Error
+    return years, err
+}

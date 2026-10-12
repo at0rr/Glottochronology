@@ -2,21 +2,6 @@
 .card-wrapper {
     position: relative;
 }
-.delete-form {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-}
-.delete-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
 * {
     margin: 0;
     padding: 0;
@@ -395,25 +380,6 @@ details[open] .feed-more-label {
     display: inline-block;
 }
 
-.delete-form {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    margin: 0;
-}
-
-.delete-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    transition: background 0.2s;
-}
-
 .delete-btn:hover {
     background: #FFDDDD;
 }
@@ -439,72 +405,50 @@ details[open] .feed-more-label {
 }
 
 /* ===== Календарь-фильтр ===== */
-.filter-calendar {
-    background: #F5F5F5;
-    border-radius: 12px;
-    padding: 12px;
+.filter-form {
+    display: flex;
+    gap: 8px;
     margin-bottom: 20px;
 }
 
-.filter-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.filter-tab {
+.date-input {
     flex: 1;
-    text-align: center;
-    padding: 8px 4px;
-    border-radius: 8px;
-    background: #FFFFFF;
-    color: #93358D;
-    text-decoration: none;
-    font-size: 13px;
+    padding: 12px;
+    border: 2px solid #9FC9EA;
+    border-radius: 10px;
+    background: #EAF4FB;
+    color: #1E3E6E;
+    font-size: 15px;
     font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
 }
 
-.filter-tab.active {
-    background: #93358D;
-    color: #FFFFFF;
-}
-
-.filter-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #FFFFFF;
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.filter-arrow {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.filter-form button {
     background: #195DE1;
     color: #FFFFFF;
-    border-radius: 50%;
-    text-decoration: none;
-    font-size: 18px;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
     font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
 }
 
-.filter-label {
-    flex: 1;
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    color: #1E3E6E;
+/* Кнопка удаления */
+.delete-form {
+    margin: 0;
+    padding: 0 10px 10px;
 }
 
-.filter-reset {
-    display: block;
-    text-align: center;
-    margin-top: 10px;
-    color: #195DE1;
+.delete-btn {
+    width: 100%;
+    background: #93358D;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
     font-size: 13px;
-    text-decoration: underline;
+    font-weight: bold;
+    cursor: pointer;
 }
