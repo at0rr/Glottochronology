@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"os"
 	"strconv"
@@ -10,19 +10,31 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "glottochronology/docs"
+
 	"glottochronology/internal/app/dsn"
 	"glottochronology/internal/app/handler"
+	"glottochronology/internal/app/redis"
 	"glottochronology/internal/app/repository"
 )
 
+// @title       Glotto API
+// @version     1.0
+// @description API для расчёта времени расхождения языков
+// @host        localhost:8080
+// @BasePath    /
+// @securityDefinitions.apikey BearerAuth
+// @in          header
+// @name        Authorization
 func main() {
 	_ = godotenv.Load()
 
 	router := gin.Default()
 
 	dbString := dsn.FromEnv()
-	fmt.Println("DSN:", dbString)
-
 	useSSL, _ := strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
 	rep, err := repository.New(repository.Settings{
@@ -38,13 +50,21 @@ func main() {
 		logrus.Fatalf("error initializing repository: %v", err)
 	}
 
-	h := handler.NewHandler(rep)
+	ctx := context.Background()
+	rc, err := redis.New(ctx)
+	if err != nil {
+		logrus.Fatalf("error initializing redis: %v", err)
+	}
+	defer rc.Close()
+
+	h := handler.NewHandler(rep, rc)
 	h.RegisterStatic(router)
 	h.RegisterHandler(router)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	log.Println("Application start!")
 	if err := router.Run(":8080"); err != nil {
 		logrus.Fatal(err)
 	}
-	log.Println("Application terminated!")
 }

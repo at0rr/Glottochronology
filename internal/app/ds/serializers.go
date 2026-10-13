@@ -128,3 +128,15 @@ func Success(data interface{}) map[string]interface{} {
 		"data":   data,
 	}
 }
+
+// SuccessResponse — общий формат успеха
+type SuccessResponse struct {
+	Status string      `json:"status"`
+	Data   interface{} `json:"data"`
+}
+
+// LikeResponse — ответ на лайк
+type LikeResponse struct {
+	Likes int64 `json:"likes"`
+	Liked bool  `json:"liked"`
+}

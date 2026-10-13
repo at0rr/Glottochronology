@@ -1,0 +1,374 @@
+basePath: /
+definitions:
+  ds.ErrorResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  ds.FeedSerializer:
+    properties:
+      creator_id:
+        type: integer
+      date_create:
+        type: string
+      date_formation:
+        type: string
+      description:
+        type: string
+      divergence_date:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      likes:
+        type: integer
+      match_percent:
+        type: integer
+      next_id:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      video_url:
+        type: string
+    type: object
+  ds.LanguageSerializer:
+    properties:
+      creator_id:
+        type: integer
+      date_create:
+        type: string
+      date_formation:
+        type: string
+      description:
+        type: string
+      divergence_date:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      likes:
+        type: integer
+      match_percent:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      video_url:
+        type: string
+    type: object
+  ds.LikeResponse:
+    properties:
+      liked:
+        type: boolean
+      likes:
+        type: integer
+    type: object
+  ds.SuccessResponse:
+    properties:
+      data: {}
+      status:
+        type: string
+    type: object
+  ds.UserSerializer:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      login:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для расчёта времени расхождения языков
+  title: Glotto API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Вход в систему
+      tags:
+      - auth
+  /api/auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход (добавляет токен в blacklist)
+      tags:
+      - auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.UserSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /api/languages:
+    get:
+      description: Возвращает список опубликованных языков с опциональным фильтром
+        по году/десятилетию/столетию
+      parameters:
+      - description: 'Режим фильтра: year | decade | century'
+        in: query
+        name: mode
+        type: string
+      - description: Значение фильтра (год)
+        in: query
+        name: value
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ds.LanguageSerializer'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Список опубликованных языков
+      tags:
+      - languages
+    post:
+      consumes:
+      - multipart/form-data
+      description: Создаёт новый черновик услуги с загрузкой изображения и видео в
+        MinIO
+      parameters:
+      - description: Название языка
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Изображение
+        in: formData
+        name: image
+        type: file
+      - description: Видео
+        in: formData
+        name: video
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.LanguageSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать черновик языка
+      tags:
+      - languages
+  /api/languages/{id}:
+    delete:
+      description: Меняет статус услуги на deleted через SQL UPDATE (soft delete)
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Логически удалить услугу
+      tags:
+      - languages
+    get:
+      description: Возвращает первую опубликованную услугу или конкретную по id. С
+        ?next=true возвращает следующую за указанной
+      parameters:
+      - description: ID языка
+        in: path
+        name: id
+        type: integer
+      - description: Если true — следующая за указанной
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.FeedSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Лента языков
+      tags:
+      - languages
+  /api/languages/{id}/like:
+    post:
+      consumes:
+      - application/json
+      description: Поле like = 1 ставит лайк, like = 0 снимает
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.LikeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Поставить/снять лайк
+      tags:
+      - languages
+  /api/languages/{id}/publish:
+    put:
+      consumes:
+      - application/json
+      description: Меняет статус черновика на published и заполняет поля
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.LanguageSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Опубликовать услугу
+      tags:
+      - languages
+  /api/languages/draft:
+    get:
+      description: Возвращает черновик авторизованного пользователя (не более одного)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.LanguageSerializer'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Черновик текущего пользователя
+      tags:
+      - languages
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

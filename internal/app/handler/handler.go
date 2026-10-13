@@ -6,35 +6,53 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
+	"glottochronology/internal/app/middleware"
+	"glottochronology/internal/app/redis"
 	"glottochronology/internal/app/repository"
 )
 
 type Handler struct {
 	Repository *repository.Repository
+	Redis      *redis.Client
 }
 
-func NewHandler(r *repository.Repository) *Handler {
-	return &Handler{Repository: r}
+func NewHandler(r *repository.Repository, rc *redis.Client) *Handler {
+	return &Handler{
+		Repository: r,
+		Redis:      rc,
+	}
 }
 
 // RegisterHandler — регистрация всех API-маршрутов
 func (h *Handler) RegisterHandler(router *gin.Engine) {
+	// --- ПУБЛИЧНЫЕ маршруты (без авторизации) ---
 	api := router.Group("/api")
 	{
-		// Услуги
-		api.GET("/languages", h.APIGetLanguages)
-		api.GET("/languages/draft", h.APIGetDraft)
-		api.GET("/languages/feed", h.APIGetFeed)
-		api.GET("/languages/:id", h.APIGetFeed)
-		api.POST("/languages", h.APICreateLanguage)
-		api.PUT("/languages/:id/publish", h.APIPublishLanguage)
-		api.DELETE("/languages/:id", h.APIDeleteLanguage)
-		api.POST("/languages/:id/like", h.APILikeLanguage)
-
-		// Пользователи
+		// Auth
 		api.POST("/auth/register", h.APIRegister)
 		api.POST("/auth/login", h.APILogin)
-		api.POST("/auth/logout", h.APILogout)
+
+		// Чтение (GET) — доступно всем
+		api.GET("/languages", h.APIGetLanguages)
+		api.GET("/languages/feed", h.APIGetFeed)
+		api.GET("/languages/:id", h.APIGetFeed)
+	}
+
+	// --- ЗАЩИЩЁННЫЕ маршруты (требуют JWT) ---
+	auth := router.Group("/api")
+	auth.Use(middleware.JWTAuth(h.Redis))
+	{
+		// Черновик — только для авторизованного
+		auth.GET("/languages/draft", h.APIGetDraft)
+
+		// Методы создателя
+		auth.POST("/languages", h.APICreateLanguage)
+		auth.PUT("/languages/:id/publish", h.APIPublishLanguage)
+		auth.DELETE("/languages/:id", h.APIDeleteLanguage)
+		auth.POST("/languages/:id/like", h.APILikeLanguage)
+
+		// Logout — только для авторизованного
+		auth.POST("/auth/logout", h.APILogout)
 	}
 
 	router.GET("/", func(c *gin.Context) {

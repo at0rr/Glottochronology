@@ -8,12 +8,21 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"glottochronology/internal/app/ds"
-	"glottochronology/internal/app/singleton"
+	"glottochronology/internal/app/middleware"
 )
 
 // ============ API-обработчики ============
 
-// GET /api/languages?mode=year&value=500
+// APIGetLanguages godoc
+// @Summary      Список опубликованных языков
+// @Description  Возвращает список опубликованных языков с опциональным фильтром по году/десятилетию/столетию
+// @Tags         languages
+// @Produce      json
+// @Param        mode  query string false "Режим фильтра: year | decade | century"
+// @Param        value query int    false "Значение фильтра (год)"
+// @Success      200   {array}   ds.LanguageSerializer
+// @Failure      500   {object}  ds.ErrorResponse
+// @Router       /api/languages [get]
 func (h *Handler) APIGetLanguages(c *gin.Context) {
 	mode := c.DefaultQuery("mode", "year")
 	valueStr := c.Query("value")
@@ -39,9 +48,17 @@ func (h *Handler) APIGetLanguages(c *gin.Context) {
 	c.JSON(http.StatusOK, ds.Success(result))
 }
 
-// GET /api/languages/:id
-// GET /api/languages/:id?next=true — следующая за указанной
-// GET /api/languages/feed — без id, первая опубликованная
+// APIGetFeed godoc
+// @Summary      Лента языков
+// @Description  Возвращает первую опубликованную услугу или конкретную по id. С ?next=true возвращает следующую за указанной
+// @Tags         languages
+// @Produce      json
+// @Param        id   path  int  false "ID языка"
+// @Param        next query bool false "Если true — следующая за указанной"
+// @Success      200  {object}  ds.FeedSerializer
+// @Failure      400  {object}  ds.ErrorResponse
+// @Failure      404  {object}  ds.ErrorResponse
+// @Router       /api/languages/{id} [get]
 func (h *Handler) APIGetFeed(c *gin.Context) {
 	idStr := c.Param("id")
 	pubURL := h.Repository.PublicURL()
@@ -97,9 +114,18 @@ func (h *Handler) APIGetFeed(c *gin.Context) {
 	))
 }
 
-// GET /api/languages/draft — черновик текущего пользователя
+// APIGetDraft godoc
+// @Summary      Черновик текущего пользователя
+// @Description  Возвращает черновик авторизованного пользователя (не более одного)
+// @Tags         languages
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  ds.LanguageSerializer
+// @Failure      401  {object}  ds.ErrorResponse
+// @Failure      404  {object}  ds.ErrorResponse
+// @Router       /api/languages/draft [get]
 func (h *Handler) APIGetDraft(c *gin.Context) {
-	draft, err := h.Repository.GetDraftByCreator(singleton.CurrentUserID())
+	draft, err := h.Repository.GetDraftByCreator(middleware.CurrentUserID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
 		return
@@ -115,8 +141,21 @@ func (h *Handler) APIGetDraft(c *gin.Context) {
 	))
 }
 
-// POST /api/languages — создание черновика (multipart/form-data)
-// Поля: title, image (file), video (file)
+// APICreateLanguage godoc
+// @Summary      Создать черновик языка
+// @Description  Создаёт новый черновик услуги с загрузкой изображения и видео в MinIO
+// @Tags         languages
+// @Security     BearerAuth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        title formData string true  "Название языка"
+// @Param        image formData file   false "Изображение"
+// @Param        video formData file   false "Видео"
+// @Success      201  {object}  ds.LanguageSerializer
+// @Failure      400  {object}  ds.ErrorResponse
+// @Failure      401  {object}  ds.ErrorResponse
+// @Failure      409  {object}  ds.ErrorResponse
+// @Router       /api/languages [post]
 func (h *Handler) APICreateLanguage(c *gin.Context) {
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
 		c.JSON(http.StatusBadRequest, ds.NewError("ошибка разбора формы: "+err.Error()))
@@ -129,14 +168,12 @@ func (h *Handler) APICreateLanguage(c *gin.Context) {
 		return
 	}
 
-	// Запрещаем создавать второй черновик
-	existing, _ := h.Repository.GetDraftByCreator(singleton.CurrentUserID())
+	existing, _ := h.Repository.GetDraftByCreator(middleware.CurrentUserID(c))
 	if existing != nil {
 		c.JSON(http.StatusConflict, ds.NewError("у пользователя уже есть черновик"))
 		return
 	}
 
-	// Загружаем картинку
 	var imageKey, videoKey string
 	if header, err := c.FormFile("image"); err == nil {
 		key, err := h.Repository.UploadFile(header, "image")
@@ -163,7 +200,7 @@ func (h *Handler) APICreateLanguage(c *gin.Context) {
 		VideoKey:       videoKey,
 		MatchPercent:   0,
 		DivergenceDate: time.Now(),
-		CreatorID:      singleton.CurrentUserID(),
+		CreatorID:      middleware.CurrentUserID(c),
 	}
 
 	if err := h.Repository.CreateDraft(lang); err != nil {
@@ -176,7 +213,18 @@ func (h *Handler) APICreateLanguage(c *gin.Context) {
 	))
 }
 
-// PUT /api/languages/:id/publish — публикация (JSON или form)
+// APIPublishLanguage godoc
+// @Summary      Опубликовать услугу
+// @Description  Меняет статус черновика на published и заполняет поля
+// @Tags         languages
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id   path int true "ID услуги"
+// @Success      200  {object}  ds.LanguageSerializer
+// @Failure      400  {object}  ds.ErrorResponse
+// @Failure      401  {object}  ds.ErrorResponse
+// @Router       /api/languages/{id}/publish [put]
 func (h *Handler) APIPublishLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -192,7 +240,6 @@ func (h *Handler) APIPublishLanguage(c *gin.Context) {
 		DivergenceDate string `json:"divergence_date"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		// fallback на form-data
 		body.Title = c.PostForm("title")
 		body.Description = c.PostForm("description")
 		body.MatchPercent, _ = strconv.Atoi(c.PostForm("match_percent"))
@@ -215,7 +262,17 @@ func (h *Handler) APIPublishLanguage(c *gin.Context) {
 	))
 }
 
-// DELETE /api/languages/:id — soft delete (SQL UPDATE)
+// APIDeleteLanguage godoc
+// @Summary      Логически удалить услугу
+// @Description  Меняет статус услуги на deleted через SQL UPDATE (soft delete)
+// @Tags         languages
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "ID услуги"
+// @Success      200  {object}  ds.SuccessResponse
+// @Failure      401  {object}  ds.ErrorResponse
+// @Failure      404  {object}  ds.ErrorResponse
+// @Router       /api/languages/{id} [delete]
 func (h *Handler) APIDeleteLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -232,7 +289,19 @@ func (h *Handler) APIDeleteLanguage(c *gin.Context) {
 	c.JSON(http.StatusOK, ds.Success(map[string]string{"message": "услуга удалена"}))
 }
 
-// POST /api/languages/:id/like — { "like": 0 | 1 }
+// APILikeLanguage godoc
+// @Summary      Поставить/снять лайк
+// @Description  Поле like = 1 ставит лайк, like = 0 снимает
+// @Tags         languages
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id   path int true "ID услуги"
+// @Success      200  {object}  ds.LikeResponse
+// @Failure      400  {object}  ds.ErrorResponse
+// @Failure      401  {object}  ds.ErrorResponse
+// @Failure      404  {object}  ds.ErrorResponse
+// @Router       /api/languages/{id}/like [post]
 func (h *Handler) APILikeLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -253,20 +322,19 @@ func (h *Handler) APILikeLanguage(c *gin.Context) {
 		return
 	}
 
-	// Проверим, что услуга есть и не удалена
 	lang, _ := h.Repository.GetByID(id)
 	if lang == nil {
 		c.JSON(http.StatusNotFound, ds.NewError("услуга не найдена"))
 		return
 	}
 
-	if err := h.Repository.SetLike(singleton.CurrentUserID(), uint(id), body.Like); err != nil {
+	if err := h.Repository.SetLike(middleware.CurrentUserID(c), uint(id), body.Like); err != nil {
 		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
 		return
 	}
 
 	c.JSON(http.StatusOK, ds.Success(map[string]interface{}{
 		"likes": h.Repository.GetLikeCount(uint(id)),
-		"liked": h.Repository.HasLike(singleton.CurrentUserID(), uint(id)),
+		"liked": h.Repository.HasLike(middleware.CurrentUserID(c), uint(id)),
 	}))
 }
