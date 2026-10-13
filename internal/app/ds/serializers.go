@@ -1,9 +1,13 @@
 package ds
 
 import (
-	"fmt"
 	"strconv"
+	"strings"
 )
+
+// Локальные дефолтные файлы (используются, если ключ пустой)
+const defaultImage = "/static/img/default.jpg"
+const defaultVideo = "/static/video/default.mp4"
 
 // formatYearStr форматирует год в человекочитаемую строку
 func formatYearStr(t interface{ Year() int }) string {
@@ -14,8 +18,39 @@ func formatYearStr(t interface{ Year() int }) string {
 	return strconv.Itoa(y) + " г."
 }
 
+// buildImageURL — умное формирование URL картинки.
+//   - пусто → локальный дефолт
+//   - http:// или https:// → вернуть как есть
+//   - /static/ → вернуть как есть (локальный файл)
+//   - иначе → publicURL + "/" + key (ключ MinIO)
+func buildImageURL(key, publicURL string) string {
+	if key == "" {
+		return defaultImage
+	}
+	if strings.HasPrefix(key, "http://") || strings.HasPrefix(key, "https://") {
+		return key
+	}
+	if strings.HasPrefix(key, "/static/") {
+		return key
+	}
+	return publicURL + "/" + key
+}
+
+// buildVideoURL — то же самое для видео
+func buildVideoURL(key, publicURL string) string {
+	if key == "" {
+		return defaultVideo
+	}
+	if strings.HasPrefix(key, "http://") || strings.HasPrefix(key, "https://") {
+		return key
+	}
+	if strings.HasPrefix(key, "/static/") {
+		return key
+	}
+	return publicURL + "/" + key
+}
+
 // LanguageSerializer — сериализатор для списка и ленты
-// Не встраивает Language напрямую, чтобы избежать проблем с time.Time с годом < 0
 type LanguageSerializer struct {
 	ID             uint   `json:"id"`
 	Title          string `json:"title"`
@@ -37,8 +72,8 @@ func NewLanguageSerializer(l Language, likes int64, publicURL string) LanguageSe
 		Title:          l.Title,
 		Description:    l.Description,
 		Status:         l.Status,
-		ImageURL:       publicURL + "/" + l.ImageKey,
-		VideoURL:       publicURL + "/" + l.VideoKey,
+		ImageURL:       buildImageURL(l.ImageKey, publicURL),
+		VideoURL:       buildVideoURL(l.VideoKey, publicURL),
 		MatchPercent:   l.MatchPercent,
 		DivergenceDate: formatYearStr(l.DivergenceDate),
 		DateCreate:     l.DateCreate.Format("2006-01-02 15:04:05"),
@@ -93,5 +128,3 @@ func Success(data interface{}) map[string]interface{} {
 		"data":   data,
 	}
 }
-
-var _ = fmt.Sprintf
