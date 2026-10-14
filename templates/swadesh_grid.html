@@ -14,29 +14,29 @@
             <!-- Календарь-фильтр по времени -->
             <div class="filter-calendar">
                 <div class="filter-tabs">
-                    <a href="/languages/catalog?mode=year&value={{ .value }}"
+                    <a href="/swadesh-lists/catalog?mode=year&value={{ .value }}"
                        class="filter-tab {{ if eq .mode "year" }}active{{ end }}">Год</a>
-                    <a href="/languages/catalog?mode=decade&value={{ .value }}"
+                    <a href="/swadesh-lists/catalog?mode=decade&value={{ .value }}"
                        class="filter-tab {{ if eq .mode "decade" }}active{{ end }}">Десятилетие</a>
-                    <a href="/languages/catalog?mode=century&value={{ .value }}"
+                    <a href="/swadesh-lists/catalog?mode=century&value={{ .value }}"
                        class="filter-tab {{ if eq .mode "century" }}active{{ end }}">Столетие</a>
                 </div>
 
                 <div class="filter-nav">
-                    <a href="/languages/catalog?mode={{ .mode }}&value={{ .prevValue }}" class="filter-arrow">←</a>
+                    <a href="/swadesh-lists/catalog?mode={{ .mode }}&value={{ .prevValue }}" class="filter-arrow">←</a>
                     <span class="filter-label">{{ .label }}</span>
-                    <a href="/languages/catalog?mode={{ .mode }}&value={{ .nextValue }}" class="filter-arrow">→</a>
+                    <a href="/swadesh-lists/catalog?mode={{ .mode }}&value={{ .nextValue }}" class="filter-arrow">→</a>
                 </div>
 
                 {{ if .hasFilter }}
-                <a href="/languages/catalog" class="filter-reset">Показать все</a>
+                <a href="/swadesh-lists/catalog" class="filter-reset">Показать все</a>
                 {{ end }}
             </div>
 
             <div class="grid">
                 {{ range .cards }}
                 <div class="card-wrapper">
-                    <a href="/languages?id={{ .ID }}" class="card">
+                    <a href="/swadesh-lists?id={{ .ID }}" class="card">
                         <img src="{{ .ImageURL }}" alt="{{ .Title }}">
                         <div class="card-body">
                             <h3>{{ .Title }} язык</h3>
@@ -44,7 +44,7 @@
                             <span class="card-likes">{{ .Likes }} ❤️</span>
                         </div>
                     </a>
-                    <form action="/languages/delete" method="POST" class="delete-form">
+                    <form action="/swadesh-lists/delete" method="POST" class="delete-form">
                         <input type="hidden" name="id" value="{{ .ID }}">
                         <button type="submit" class="delete-btn" title="Удалить">🗑</button>
                     </form>
@@ -53,9 +53,9 @@
             </div>
         </div>
         <nav class="bottom-nav">
-            <a href="/languages" class="nav-item">Лента</a>
-            <a href="/languages/new" class="nav-item">Добавление</a>
-            <a href="/languages/catalog" class="nav-item active">Плитка</a>
+            <a href="/swadesh-lists" class="nav-item">Лента</a>
+            <a href="/swadesh-lists/new" class="nav-item">Добавление</a>
+            <a href="/swadesh-lists/catalog" class="nav-item active">Плитка</a>
         </nav>
     </div>
 </body>

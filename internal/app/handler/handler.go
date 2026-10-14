@@ -22,14 +22,14 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 	api := router.Group("/api")
 	{
 		// Услуги
-		api.GET("/languages", h.APIGetLanguages)
-		api.GET("/languages/draft", h.APIGetDraft)
-		api.GET("/languages/feed", h.APIGetFeed)
-		api.GET("/languages/:id", h.APIGetFeed)
-		api.POST("/languages", h.APICreateLanguage)
-		api.PUT("/languages/:id/publish", h.APIPublishLanguage)
-		api.DELETE("/languages/:id", h.APIDeleteLanguage)
-		api.POST("/languages/:id/like", h.APILikeLanguage)
+		api.GET("/swadesh-lists", h.APIGetLanguages)
+		api.GET("/swadesh-lists/feed", h.APIGetFeed)
+		api.GET("/swadesh-lists/draft", h.APIGetDraft)
+		api.GET("/swadesh-lists/:id", h.APIGetFeed)
+		api.POST("/swadesh-lists", h.APICreateLanguage)
+		api.PUT("/swadesh-lists/:id/publish", h.APIPublishLanguage)
+		api.DELETE("/swadesh-lists/:id", h.APIDeleteLanguage)
+		api.POST("/swadesh-lists/:id/like", h.APILikeLanguage)
 
 		// Пользователи
 		api.POST("/auth/register", h.APIRegister)
@@ -38,7 +38,7 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 	}
 
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/api/languages")
+		c.Redirect(http.StatusFound, "/api/swadesh-lists")
 	})
 }
 
