@@ -105,7 +105,7 @@ func (h *Handler) FeedHandler(c *gin.Context) {
 		}
 	}
 
-	c.HTML(http.StatusOK, "feed.html", gin.H{
+	c.HTML(http.StatusOK, "swadesh_feed.html", gin.H{
 		"service":  lang,
 		"likes":    h.Repository.GetLikeCount(lang.ID),
 		"imageURL": imageURLFor(lang.ImageKey),
@@ -123,11 +123,11 @@ func (h *Handler) AddHandler(c *gin.Context) {
 	}
 
 	if draft != nil && draft.ID != 0 {
-		c.Redirect(302, "/languages/publish")
+		c.Redirect(302, "/swadesh-lists/publish")
 		return
 	}
 
-	c.HTML(http.StatusOK, "add-step1.html", gin.H{
+	c.HTML(http.StatusOK, "swadesh_add_step1.html", gin.H{
 		"defaultImage": defaultImage,
 		"defaultVideo": defaultVideo,
 	})
@@ -173,7 +173,7 @@ func (h *Handler) GridHandler(c *gin.Context) {
         })
     }
 
-    c.HTML(http.StatusOK, "grid.html", gin.H{
+    c.HTML(http.StatusOK, "swadesh_grid.html", gin.H{
         "cards":  cards,
         "filter": dateStr,
     })
@@ -209,7 +209,7 @@ func (h *Handler) CreateDraftHandler(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/publish")
+	c.Redirect(http.StatusFound, "/swadesh-lists/publish")
 }
 
 // --- GET /languages/publish ---
@@ -220,11 +220,11 @@ func (h *Handler) PublishFormHandler(c *gin.Context) {
 		return
 	}
 	if draft == nil {
-		c.Redirect(302, "/languages/new")
+		c.Redirect(302, "/swadesh-lists/new")
 		return
 	}
 
-	c.HTML(http.StatusOK, "add-step2.html", gin.H{
+	c.HTML(http.StatusOK, "swadesh_add_step2.html", gin.H{
 		"service":  draft,
 		"imageURL": imageURLFor(draft.ImageKey),
 		"videoURL": videoURLFor(draft.VideoKey),
@@ -251,7 +251,7 @@ func (h *Handler) PublishHandler(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/catalog")
+	c.Redirect(http.StatusFound, "/swadesh-lists/catalog")
 }
 
 // --- POST /languages/delete ---
@@ -269,5 +269,5 @@ func (h *Handler) DeleteHandler(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/languages/catalog")
+	c.Redirect(http.StatusFound, "/swadesh-lists/catalog")
 }

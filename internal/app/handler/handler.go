@@ -18,19 +18,19 @@ func NewHandler(r *repository.Repository) *Handler {
 // RegisterHandler — все маршруты
 func (h *Handler) RegisterHandler(router *gin.Engine) {
 	// GET
-	router.GET("/languages", h.FeedHandler)
-	router.GET("/languages/new", h.AddHandler)
-	router.GET("/languages/publish", h.PublishFormHandler) // ← ВОТ ЭТОТ МАРШРУТ
-	router.GET("/languages/catalog", h.GridHandler)
+	router.GET("/swadesh-lists", h.FeedHandler)
+	router.GET("/swadesh-lists/new", h.AddHandler)
+	router.GET("/swadesh-lists/publish", h.PublishFormHandler)
+	router.GET("/swadesh-lists/catalog", h.GridHandler)
 
 	// POST
-	router.POST("/languages/new", h.CreateDraftHandler)
-	router.POST("/languages/publish", h.PublishHandler)
-	router.POST("/languages/delete", h.DeleteHandler)
+	router.POST("/swadesh-lists/new", h.CreateDraftHandler)
+	router.POST("/swadesh-lists/publish", h.PublishHandler)
+	router.POST("/swadesh-lists/delete", h.DeleteHandler)
 
 	// редирект с корня
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/languages")
+		c.Redirect(302, "/swadesh-lists")
 	})
 }
 
