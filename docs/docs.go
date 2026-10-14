@@ -27,6 +27,17 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Вход в систему",
+                "parameters": [
+                    {
+                        "description": "Данные для входа",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "401": {
                         "description": "Unauthorized",
@@ -79,6 +90,17 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Регистрация пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные регистрации",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -569,6 +591,32 @@ const docTemplate = `{
                 },
                 "login": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "testuser"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret"
+                }
+            }
+        },
+        "dto.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "testuser"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret"
                 }
             }
         }

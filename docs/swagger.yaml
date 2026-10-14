@@ -85,6 +85,24 @@ definitions:
       login:
         type: string
     type: object
+  dto.LoginRequest:
+    properties:
+      login:
+        example: testuser
+        type: string
+      password:
+        example: secret
+        type: string
+    type: object
+  dto.RegisterRequest:
+    properties:
+      login:
+        example: testuser
+        type: string
+      password:
+        example: secret
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -96,6 +114,13 @@ paths:
     post:
       consumes:
       - application/json
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
@@ -128,6 +153,13 @@ paths:
     post:
       consumes:
       - application/json
+      parameters:
+      - description: Данные регистрации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:

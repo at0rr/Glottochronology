@@ -100,14 +100,12 @@ func NewFeedSerializer(l Language, likes int64, publicURL string, nextID *uint) 
 type UserSerializer struct {
 	ID        uint   `json:"id"`
 	Login     string `json:"login"`
-	CreatedAt int64  `json:"created_at"`
 }
 
 func NewUserSerializer(u User) UserSerializer {
 	return UserSerializer{
 		ID:        u.ID,
 		Login:     u.Login,
-		CreatedAt: u.CreatedAt,
 	}
 }
 

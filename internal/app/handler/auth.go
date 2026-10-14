@@ -10,22 +10,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"glottochronology/internal/app/ds"
+	"glottochronology/internal/app/dto"
 )
 
-// Register godoc
+// APIRegister godoc
 // @Summary      Регистрация пользователя
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        body body dto.RegisterRequest true "Данные регистрации"
 // @Success      201  {object}  ds.UserSerializer
 // @Failure      400  {object}  ds.ErrorResponse
 // @Failure      409  {object}  ds.ErrorResponse
 // @Router       /api/auth/register [post]
 func (h *Handler) APIRegister(c *gin.Context) {
-	var body struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	var body dto.RegisterRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, ds.NewError("неверное тело запроса"))
 		return
@@ -57,11 +56,9 @@ func (h *Handler) APIRegister(c *gin.Context) {
 // @Produce      json
 // @Failure      401  {object}  ds.ErrorResponse
 // @Router       /api/auth/login [post]
+// @Param body body dto.LoginRequest true "Данные для входа"
 func (h *Handler) APILogin(c *gin.Context) {
-	var body struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	var body dto.LoginRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, ds.NewError("неверное тело запроса"))
 		return
