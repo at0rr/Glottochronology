@@ -19,10 +19,6 @@ func formatYearStr(t interface{ Year() int }) string {
 }
 
 // buildImageURL — умное формирование URL картинки.
-//   - пусто → локальный дефолт
-//   - http:// или https:// → вернуть как есть
-//   - /static/ → вернуть как есть (локальный файл)
-//   - иначе → publicURL + "/" + key (ключ MinIO)
 func buildImageURL(key, publicURL string) string {
 	if key == "" {
 		return defaultImage
@@ -64,9 +60,12 @@ type LanguageSerializer struct {
 	DateFormation  string `json:"date_formation"`
 	CreatorID      uint   `json:"creator_id"`
 	Likes          int64  `json:"likes"`
+	IsCreator      bool   `json:"is_creator"`
+	IsLiked        bool   `json:"is_liked"`
 }
 
-func NewLanguageSerializer(l Language, likes int64, publicURL string) LanguageSerializer {
+// ОБНОВЛЕНО: добавлены currentUserID и isLiked в аргументы
+func NewLanguageSerializer(l Language, likes int64, currentUserID uint, isLiked bool, publicURL string) LanguageSerializer {
 	return LanguageSerializer{
 		ID:             l.ID,
 		Title:          l.Title,
@@ -80,6 +79,8 @@ func NewLanguageSerializer(l Language, likes int64, publicURL string) LanguageSe
 		DateFormation:  l.DateFormation.Format("2006-01-02 15:04:05"),
 		CreatorID:      l.CreatorID,
 		Likes:          likes,
+		IsCreator:      l.CreatorID == currentUserID,
+		IsLiked:        isLiked,
 	}
 }
 
@@ -89,9 +90,10 @@ type FeedSerializer struct {
 	NextID *uint `json:"next_id,omitempty"`
 }
 
-func NewFeedSerializer(l Language, likes int64, publicURL string, nextID *uint) FeedSerializer {
+// ОБНОВЛЕНО: добавлены currentUserID и isLiked в аргументы
+func NewFeedSerializer(l Language, likes int64, currentUserID uint, isLiked bool, publicURL string, nextID *uint) FeedSerializer {
 	return FeedSerializer{
-		LanguageSerializer: NewLanguageSerializer(l, likes, publicURL),
+		LanguageSerializer: NewLanguageSerializer(l, likes, currentUserID, isLiked, publicURL),
 		NextID:             nextID,
 	}
 }

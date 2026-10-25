@@ -13,7 +13,7 @@ import (
 
 // ============ API-обработчики ============
 
-// GET /api/languages?mode=year&value=500
+// GET /api/swadesh-lists?mode=year&value=500
 func (h *Handler) APIGetLanguages(c *gin.Context) {
 	mode := c.DefaultQuery("mode", "year")
 	valueStr := c.Query("value")
@@ -33,17 +33,18 @@ func (h *Handler) APIGetLanguages(c *gin.Context) {
 	result := make([]ds.LanguageSerializer, 0, len(langs))
 	for _, l := range langs {
 		likes := h.Repository.GetLikeCount(l.ID)
-		result = append(result, ds.NewLanguageSerializer(l, likes, pubURL))
+		isLiked := h.Repository.HasLike(singleton.CurrentUserID(), l.ID)
+		result = append(result, ds.NewLanguageSerializer(l, likes, singleton.CurrentUserID(), isLiked, pubURL))
 	}
 
 	c.JSON(http.StatusOK, ds.Success(result))
 }
 
-// GET /api/languages/:id
-// GET /api/languages/:id?next=true — следующая за указанной
-// GET /api/languages/feed — без id, первая опубликованная
+// GET /api/swadesh-lists/:id
+// GET /api/swadesh-lists/:id?next=true — следующая за указанной
+// GET /api/swadesh-lists/feed — без id, первая опубликованная
 func (h *Handler) APIGetFeed(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Query("id")
 	pubURL := h.Repository.PublicURL()
 
 	// без id → первая опубликованная
@@ -58,8 +59,9 @@ func (h *Handler) APIGetFeed(c *gin.Context) {
 		if len(all) > 1 {
 			nextID = &all[1].ID
 		}
+		isLiked := h.Repository.HasLike(singleton.CurrentUserID(), lang.ID)
 		c.JSON(http.StatusOK, ds.Success(
-			ds.NewFeedSerializer(lang, h.Repository.GetLikeCount(lang.ID), pubURL, nextID),
+			ds.NewFeedSerializer(lang, h.Repository.GetLikeCount(lang.ID), singleton.CurrentUserID(), isLiked, pubURL, nextID),
 		))
 		return
 	}
@@ -92,12 +94,13 @@ func (h *Handler) APIGetFeed(c *gin.Context) {
 		nextID = &next.ID
 	}
 
+	isLiked := h.Repository.HasLike(singleton.CurrentUserID(), lang.ID)
 	c.JSON(http.StatusOK, ds.Success(
-		ds.NewFeedSerializer(*lang, h.Repository.GetLikeCount(lang.ID), pubURL, nextID),
+		ds.NewFeedSerializer(*lang, h.Repository.GetLikeCount(lang.ID), singleton.CurrentUserID(), isLiked, pubURL, nextID),
 	))
 }
 
-// GET /api/languages/draft — черновик текущего пользователя
+// GET /api/swadesh-lists/draft — черновик текущего пользователя
 func (h *Handler) APIGetDraft(c *gin.Context) {
 	draft, err := h.Repository.GetDraftByCreator(singleton.CurrentUserID())
 	if err != nil {
@@ -110,12 +113,13 @@ func (h *Handler) APIGetDraft(c *gin.Context) {
 	}
 
 	pubURL := h.Repository.PublicURL()
-	c.JSON(http.StatusOK, ds.Success(
-		ds.NewLanguageSerializer(*draft, h.Repository.GetLikeCount(draft.ID), pubURL),
+	isLiked := h.Repository.HasLike(singleton.CurrentUserID(), draft.ID)
+	c.JSON(http.StatusOK, ds.Success( // ИСПРАВЛЕНО: StatusOK (было Created)
+		ds.NewLanguageSerializer(*draft, h.Repository.GetLikeCount(draft.ID), singleton.CurrentUserID(), isLiked, pubURL), // ИСПРАВЛЕНО: *draft (было *lang)
 	))
 }
 
-// POST /api/languages — создание черновика (multipart/form-data)
+// POST /api/swadesh-lists — создание черновика (multipart/form-data)
 // Поля: title, image (file), video (file)
 func (h *Handler) APICreateLanguage(c *gin.Context) {
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
@@ -171,12 +175,13 @@ func (h *Handler) APICreateLanguage(c *gin.Context) {
 		return
 	}
 
+	// ИСПРАВЛЕНО: добавлены аргументы (singleton.CurrentUserID(), false)
 	c.JSON(http.StatusCreated, ds.Success(
-		ds.NewLanguageSerializer(*lang, 0, h.Repository.PublicURL()),
+		ds.NewLanguageSerializer(*lang, 0, singleton.CurrentUserID(), false, h.Repository.PublicURL()),
 	))
 }
 
-// PUT /api/languages/:id/publish — публикация (JSON или form)
+// PUT /api/swadesh-lists/:id/publish — публикация (JSON или form)
 func (h *Handler) APIPublishLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -210,12 +215,13 @@ func (h *Handler) APIPublishLanguage(c *gin.Context) {
 		return
 	}
 
+	isLiked := h.Repository.HasLike(singleton.CurrentUserID(), lang.ID)
 	c.JSON(http.StatusOK, ds.Success(
-		ds.NewLanguageSerializer(*lang, h.Repository.GetLikeCount(lang.ID), h.Repository.PublicURL()),
+		ds.NewLanguageSerializer(*lang, h.Repository.GetLikeCount(lang.ID), singleton.CurrentUserID(), isLiked, h.Repository.PublicURL()),
 	))
 }
 
-// DELETE /api/languages/:id — soft delete (SQL UPDATE)
+// DELETE /api/swadesh-lists/:id — soft delete (SQL UPDATE)
 func (h *Handler) APIDeleteLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -232,7 +238,7 @@ func (h *Handler) APIDeleteLanguage(c *gin.Context) {
 	c.JSON(http.StatusOK, ds.Success(map[string]string{"message": "услуга удалена"}))
 }
 
-// POST /api/languages/:id/like — { "like": 0 | 1 }
+// POST /api/swadesh-lists/:id/like — { "like": 0 | 1 }
 func (h *Handler) APILikeLanguage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

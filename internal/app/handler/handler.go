@@ -25,7 +25,6 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 		api.GET("/swadesh-lists", h.APIGetLanguages)
 		api.GET("/swadesh-lists/feed", h.APIGetFeed)
 		api.GET("/swadesh-lists/draft", h.APIGetDraft)
-		api.GET("/swadesh-lists/:id", h.APIGetFeed)
 		api.POST("/swadesh-lists", h.APICreateLanguage)
 		api.PUT("/swadesh-lists/:id/publish", h.APIPublishLanguage)
 		api.DELETE("/swadesh-lists/:id", h.APIDeleteLanguage)
