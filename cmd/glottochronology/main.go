@@ -33,6 +33,7 @@ func main() {
 	_ = godotenv.Load()
 
 	router := gin.Default()
+	router.LoadHTMLGlob("templates/*")
 
 	dbString := dsn.FromEnv()
 	useSSL, _ := strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))

@@ -37,17 +37,30 @@
                     </summary>
                     <div class="feed-expanded">
                         <p class="feed-desc-full">{{ .service.Description }}</p>
+
+                        <!-- НОВЫЙ БЛОК С АТРИБУТАМИ -->
+                        {{ if .service.Attributes }}
+                        <div class="service-attributes" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
+                            {{ range .service.Attributes }}
+                                <p class="feed-field" style="margin-bottom: 4px;">
+                                    <strong>{{ .Attribute.Name }}:</strong> {{ .Value }}
+                                </p>
+                            {{ end }}
+                        </div>
+                        {{ end }}
+                        <!-- КОНЕЦ НОВОГО БЛОКА -->
+
                     </div>
                 </details>
             </div>
 
-            <a href="/languages?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
+            <a href="/swadesh-lists?id={{ .service.ID }}&next=true" class="feed-next-btn">→</a>
         </div>
 
         <nav class="bottom-nav bottom-nav-overlay">
-            <a href="/languages" class="nav-item active">Лента</a>
-            <a href="/languages/new" class="nav-item">Добавление</a>
-            <a href="/languages/catalog" class="nav-item">Плитка</a>
+            <a href="/swadesh-lists" class="nav-item active">Лента</a>
+            <a href="/swadesh-lists/new" class="nav-item">Добавление</a>
+            <a href="/swadesh-lists/catalog" class="nav-item">Плитка</a>
         </nav>
     </div>
 </body>

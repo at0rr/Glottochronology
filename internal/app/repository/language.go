@@ -12,7 +12,7 @@ import (
 // GetAllPublished с фильтром по году/десятилетию/столетию
 func (r *Repository) GetAllPublished(mode string, value int, hasFilter bool) ([]ds.Language, error) {
 	var langs []ds.Language
-	q := r.db.Where("status = ?", "published")
+	q := r.db.Preload("Attributes").Preload("Attributes.Attribute").Where("status = ?", "published")
 
 	if hasFilter {
 		switch mode {
@@ -31,7 +31,12 @@ func (r *Repository) GetAllPublished(mode string, value int, hasFilter bool) ([]
 // GetByID — одна услуга по ID (не deleted)
 func (r *Repository) GetByID(id int) (*ds.Language, error) {
 	var lang ds.Language
-	err := r.db.Where("id = ? AND status <> ?", id, "deleted").First(&lang).Error
+	err := r.db.
+		Preload("Attributes").
+		Preload("Attributes.Attribute").
+		Where("id = ? AND status <> ?", id, "deleted").
+		First(&lang).Error
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -44,7 +49,10 @@ func (r *Repository) GetByID(id int) (*ds.Language, error) {
 // GetNextAfterID — следующая опубликованная после указанного ID
 func (r *Repository) GetNextAfterID(id int) (*ds.Language, error) {
 	var lang ds.Language
-	err := r.db.Where("status = ? AND id > ?", "published", id).
+	err := r.db.
+		Preload("Attributes"). // Добавили
+		Preload("Attributes.Attribute"). // Добавили
+		Where("status = ? AND id > ?", "published", id).
 		Order("id").First(&lang).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
@@ -55,7 +63,10 @@ func (r *Repository) GetNextAfterID(id int) (*ds.Language, error) {
 // GetDraftByCreator — черновик текущего пользователя
 func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Language, error) {
 	var lang ds.Language
-	err := r.db.Where("status = ? AND creator_id = ?", "draft", creatorID).
+	err := r.db.
+		Preload("Attributes"). // Добавили
+		Preload("Attributes.Attribute"). // Добавили
+		Where("status = ? AND creator_id = ?", "draft", creatorID).
 		First(&lang).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil

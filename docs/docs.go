@@ -123,9 +123,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/languages": {
+        "/api/swadesh-lists": {
             "get": {
-                "description": "Возвращает список опубликованных языков с опциональным фильтром по году/десятилетию/столетию",
+                "description": "Возвращает список опубликованных языков с опциональным фильтром",
                 "produces": [
                     "application/json"
                 ],
@@ -171,7 +171,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый черновик услуги с загрузкой изображения и видео в MinIO",
+                "description": "Создаёт новый черновик услуги с загрузкой изображения и видео",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -231,7 +231,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/languages/draft": {
+        "/api/swadesh-lists/draft": {
             "get": {
                 "security": [
                     {
@@ -268,9 +268,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/languages/{id}": {
+        "/api/swadesh-lists/feed": {
             "get": {
-                "description": "Возвращает первую опубликованную услугу или конкретную по id. С ?next=true возвращает следующую за указанной",
+                "description": "Возвращает первую опубликованную услугу или конкретную по id (в query). С ?next=true возвращает следующую.",
                 "produces": [
                     "application/json"
                 ],
@@ -283,7 +283,7 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "ID языка",
                         "name": "id",
-                        "in": "path"
+                        "in": "query"
                     },
                     {
                         "type": "boolean",
@@ -312,7 +312,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/swadesh-lists/{id}": {
             "delete": {
                 "security": [
                     {
@@ -358,7 +360,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/languages/{id}/like": {
+        "/api/swadesh-lists/{id}/like": {
             "post": {
                 "security": [
                     {
@@ -413,7 +415,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/languages/{id}/publish": {
+        "/api/swadesh-lists/{id}/publish": {
             "put": {
                 "security": [
                     {
@@ -499,6 +501,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "is_creator": {
+                    "type": "boolean"
+                },
+                "is_liked": {
+                    "type": "boolean"
+                },
                 "likes": {
                     "type": "integer"
                 },
@@ -543,6 +551,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "is_creator": {
+                    "type": "boolean"
+                },
+                "is_liked": {
+                    "type": "boolean"
+                },
                 "likes": {
                     "type": "integer"
                 },
@@ -583,9 +597,6 @@ const docTemplate = `{
         "ds.UserSerializer": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
                 },

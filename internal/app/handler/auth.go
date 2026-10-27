@@ -94,7 +94,6 @@ func (h *Handler) APILogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"expires_in":   expiresIn,
 			"access_token": tokenStr,

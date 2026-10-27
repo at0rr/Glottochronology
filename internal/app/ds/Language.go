@@ -15,6 +15,7 @@ type Language struct {
 	DateCreate     time.Time `gorm:"autoCreateTime" json:"date_create"`
 	DateFormation  time.Time `gorm:"autoUpdateTime" json:"date_formation"`
 	CreatorID      uint      `gorm:"not null" json:"creator_id"`
+	Attributes []AttributeValue `gorm:"foreignKey:SwadeshListID" json:"attributes"`
 }
 
 func (Language) TableName() string {

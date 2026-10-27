@@ -5,11 +5,9 @@ import (
 	"strings"
 )
 
-// Локальные дефолтные файлы (используются, если ключ пустой)
 const defaultImage = "/static/img/default.jpg"
 const defaultVideo = "/static/video/default.mp4"
 
-// formatYearStr форматирует год в человекочитаемую строку
 func formatYearStr(t interface{ Year() int }) string {
 	y := t.Year()
 	if y < 0 {
@@ -18,11 +16,6 @@ func formatYearStr(t interface{ Year() int }) string {
 	return strconv.Itoa(y) + " г."
 }
 
-// buildImageURL — умное формирование URL картинки.
-//   - пусто → локальный дефолт
-//   - http:// или https:// → вернуть как есть
-//   - /static/ → вернуть как есть (локальный файл)
-//   - иначе → publicURL + "/" + key (ключ MinIO)
 func buildImageURL(key, publicURL string) string {
 	if key == "" {
 		return defaultImage
@@ -36,7 +29,6 @@ func buildImageURL(key, publicURL string) string {
 	return publicURL + "/" + key
 }
 
-// buildVideoURL — то же самое для видео
 func buildVideoURL(key, publicURL string) string {
 	if key == "" {
 		return defaultVideo
@@ -50,7 +42,6 @@ func buildVideoURL(key, publicURL string) string {
 	return publicURL + "/" + key
 }
 
-// LanguageSerializer — сериализатор для списка и ленты
 type LanguageSerializer struct {
 	ID             uint   `json:"id"`
 	Title          string `json:"title"`
@@ -64,9 +55,13 @@ type LanguageSerializer struct {
 	DateFormation  string `json:"date_formation"`
 	CreatorID      uint   `json:"creator_id"`
 	Likes          int64  `json:"likes"`
+	IsCreator      bool   `json:"is_creator"`
+	IsLiked        bool   `json:"is_liked"`
+	Attributes []AttributeValue `json:"attributes"`
 }
 
-func NewLanguageSerializer(l Language, likes int64, publicURL string) LanguageSerializer {
+// ОБНОВЛЕНО: добавлены currentUserID и isLiked
+func NewLanguageSerializer(l Language, likes int64, currentUserID uint, isLiked bool, publicURL string) LanguageSerializer {
 	return LanguageSerializer{
 		ID:             l.ID,
 		Title:          l.Title,
@@ -80,23 +75,25 @@ func NewLanguageSerializer(l Language, likes int64, publicURL string) LanguageSe
 		DateFormation:  l.DateFormation.Format("2006-01-02 15:04:05"),
 		CreatorID:      l.CreatorID,
 		Likes:          likes,
+		IsCreator:      l.CreatorID == currentUserID,
+		IsLiked:        isLiked,
+		Attributes:     l.Attributes, // ВОТ ТУТ передаем атрибуты из модели в ответ
 	}
 }
 
-// FeedSerializer — сериализатор для ленты (добавляет поле next_id)
 type FeedSerializer struct {
 	LanguageSerializer
 	NextID *uint `json:"next_id,omitempty"`
 }
 
-func NewFeedSerializer(l Language, likes int64, publicURL string, nextID *uint) FeedSerializer {
+// ОБНОВЛЕНО: добавлены currentUserID и isLiked
+func NewFeedSerializer(l Language, likes int64, currentUserID uint, isLiked bool, publicURL string, nextID *uint) FeedSerializer {
 	return FeedSerializer{
-		LanguageSerializer: NewLanguageSerializer(l, likes, publicURL),
+		LanguageSerializer: NewLanguageSerializer(l, likes, currentUserID, isLiked, publicURL),
 		NextID:             nextID,
 	}
 }
 
-// UserSerializer — сериализатор пользователя
 type UserSerializer struct {
 	ID        uint   `json:"id"`
 	Login     string `json:"login"`
@@ -104,12 +101,11 @@ type UserSerializer struct {
 
 func NewUserSerializer(u User) UserSerializer {
 	return UserSerializer{
-		ID:        u.ID,
-		Login:     u.Login,
+		ID:    u.ID,
+		Login: u.Login,
 	}
 }
 
-// ErrorResponse — общий формат ошибки
 type ErrorResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
@@ -119,21 +115,15 @@ func NewError(message string) ErrorResponse {
 	return ErrorResponse{Status: "error", Message: message}
 }
 
-// Success — общий формат успеха
-func Success(data interface{}) map[string]interface{} {
-	return map[string]interface{}{
-		"status": "success",
-		"data":   data,
-	}
+func Success(data interface{}) interface{} {
+	return data
 }
 
-// SuccessResponse — общий формат успеха
 type SuccessResponse struct {
 	Status string      `json:"status"`
 	Data   interface{} `json:"data"`
 }
 
-// LikeResponse — ответ на лайк
 type LikeResponse struct {
 	Likes int64 `json:"likes"`
 	Liked bool  `json:"liked"`

@@ -25,38 +25,37 @@ func NewHandler(r *repository.Repository, rc *redis.Client) *Handler {
 
 // RegisterHandler — регистрация всех API-маршрутов
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// --- ПУБЛИЧНЫЕ маршруты (без авторизации) ---
+	// --- HTML СТРАНИЦЫ (для браузера) ---
+	router.GET("/swadesh-lists", h.FeedHandler)             // Сама лента
+	router.GET("/swadesh-lists/catalog", h.GridHandler)     // Плитка
+	router.GET("/swadesh-lists/new", h.AddHandler)          // Добавление
+	router.GET("/swadesh-lists/publish", h.PublishFormHandler) // Публикация
+
+	// --- ПУБЛИЧНЫЕ API маршруты (без авторизации) ---
 	api := router.Group("/api")
 	{
-		// Auth
 		api.POST("/auth/register", h.APIRegister)
 		api.POST("/auth/login", h.APILogin)
 
-		// Чтение (GET) — доступно всем
-		api.GET("/languages", h.APIGetLanguages)
-		api.GET("/languages/feed", h.APIGetFeed)
-		api.GET("/languages/:id", h.APIGetFeed)
+		api.GET("/swadesh-lists", h.APIGetLanguages)
+		api.GET("/swadesh-lists/feed", h.APIGetFeed)
 	}
 
-	// --- ЗАЩИЩЁННЫЕ маршруты (требуют JWT) ---
+	// --- ЗАЩИЩЁННЫЕ API маршруты (требуют JWT) ---
 	auth := router.Group("/api")
 	auth.Use(middleware.JWTAuth(h.Redis))
 	{
-		// Черновик — только для авторизованного
-		auth.GET("/languages/draft", h.APIGetDraft)
-
-		// Методы создателя
-		auth.POST("/languages", h.APICreateLanguage)
-		auth.PUT("/languages/:id/publish", h.APIPublishLanguage)
-		auth.DELETE("/languages/:id", h.APIDeleteLanguage)
-		auth.POST("/languages/:id/like", h.APILikeLanguage)
-
-		// Logout — только для авторизованного
+		auth.GET("/swadesh-lists/draft", h.APIGetDraft)
+		auth.POST("/swadesh-lists", h.APICreateLanguage)
+		auth.PUT("/swadesh-lists/:id/publish", h.APIPublishLanguage)
+		auth.DELETE("/swadesh-lists/:id", h.APIDeleteLanguage)
+		auth.POST("/swadesh-lists/:id/like", h.APILikeLanguage)
 		auth.POST("/auth/logout", h.APILogout)
 	}
 
+	// Редирект с корня на HTML-ленту
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/api/languages")
+		c.Redirect(http.StatusFound, "/swadesh-lists")
 	})
 }
 

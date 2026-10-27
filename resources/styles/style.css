@@ -1,22 +1,59 @@
 /* Обёртка карточки с кнопкой удаления */
+/* Карточка-обертка, которая держит и контент, и кнопку */
 .card-wrapper {
-    position: relative;
+    background: #F5F5F5;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
 }
+
+/* Кликабельная часть (картинка и текст) */
+.card-content {
+    display: block;
+    text-decoration: none;
+    color: #000000;
+    flex: 1;
+}
+
+.card-content img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Контейнер для кнопки удаления (внизу карточки) */
 .delete-form {
-    position: absolute;
-    top: 6px;
-    right: 6px;
+    margin: 0;
+    padding: 0 10px 10px 10px;
 }
+
+/* Фиолетовая кнопка в стиле навигации */
 .delete-btn {
-    background: rgba(255, 255, 255, 0.9);
+    width: 100%;
+    background: #93358D; /* Тот самый фиолетовый */
+    color: #FFFFFF;
     border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s;
 }
+
+.delete-btn:hover {
+    background: #195DE1; /* Синий при наведении */
+}
+
+/* Убираем старые стили, если они мешают (например, .card) */
+.card {
+    box-shadow: none;
+    background: transparent;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -350,10 +387,6 @@ details[open] .feed-more-label {
     gap: 12px;
 }
 
-.card-wrapper {
-    position: relative;
-}
-
 .card {
     display: block;
     text-decoration: none;
@@ -393,29 +426,6 @@ details[open] .feed-more-label {
     font-weight: bold;
     font-size: 14px;
     display: inline-block;
-}
-
-.delete-form {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    margin: 0;
-}
-
-.delete-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    transition: background 0.2s;
-}
-
-.delete-btn:hover {
-    background: #FFDDDD;
 }
 
 /* Заголовки секций формы добавления */
@@ -507,4 +517,145 @@ details[open] .feed-more-label {
     color: #195DE1;
     font-size: 13px;
     text-decoration: underline;
+}
+
+.filter-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.date-input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #9FC9EA;
+    border-radius: 10px;
+    background: #EAF4FB;
+    color: #1E3E6E;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.filter-btn {
+    background: #195DE1;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ===== ФИНАЛЬНЫЕ ИСПРАВЛЕНИЯ ДЛЯ ПЛИТКИ И КАЛЕНДАРЯ ===== */
+
+/* Сетка из 2 колонок */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+/* Обертка карточки */
+.card-wrapper {
+    background: #F5F5F5;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Кликабельная часть карточки */
+.card-content {
+    display: block;
+    text-decoration: none;
+    color: #000000;
+    flex: 1;
+}
+
+/* Картинка внутри карточки (больше не будет гигантской) */
+.card-content img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Текстовый блок */
+.card-content .card-body {
+    padding: 10px;
+}
+
+.card-content .card-body h3 {
+    color: #333333;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.card-content .card-body p {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #333333;
+}
+
+.card-content .card-body .card-likes {
+    color: #93358D;
+    font-weight: bold;
+    font-size: 14px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+/* Контейнер и кнопка удаления */
+.delete-form {
+    margin: 0;
+    padding: 0 10px 10px 10px;
+}
+
+.delete-btn {
+    width: 100%;
+    background: #93358D;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.delete-btn:hover {
+    background: #195DE1;
+}
+
+/* Стили для календаря */
+.filter-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.date-input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #9FC9EA;
+    border-radius: 10px;
+    background: #EAF4FB;
+    color: #1E3E6E;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: inherit;
+}
+
+.filter-btn {
+    background: #195DE1;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
 }

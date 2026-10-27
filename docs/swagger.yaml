@@ -23,6 +23,10 @@ definitions:
         type: integer
       image_url:
         type: string
+      is_creator:
+        type: boolean
+      is_liked:
+        type: boolean
       likes:
         type: integer
       match_percent:
@@ -52,6 +56,10 @@ definitions:
         type: integer
       image_url:
         type: string
+      is_creator:
+        type: boolean
+      is_liked:
+        type: boolean
       likes:
         type: integer
       match_percent:
@@ -78,8 +86,6 @@ definitions:
     type: object
   ds.UserSerializer:
     properties:
-      created_at:
-        type: integer
       id:
         type: integer
       login:
@@ -178,10 +184,9 @@ paths:
       summary: Регистрация пользователя
       tags:
       - auth
-  /api/languages:
+  /api/swadesh-lists:
     get:
       description: Возвращает список опубликованных языков с опциональным фильтром
-        по году/десятилетию/столетию
       parameters:
       - description: 'Режим фильтра: year | decade | century'
         in: query
@@ -210,8 +215,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Создаёт новый черновик услуги с загрузкой изображения и видео в
-        MinIO
+      description: Создаёт новый черновик услуги с загрузкой изображения и видео
       parameters:
       - description: Название языка
         in: formData
@@ -250,7 +254,7 @@ paths:
       summary: Создать черновик языка
       tags:
       - languages
-  /api/languages/{id}:
+  /api/swadesh-lists/{id}:
     delete:
       description: Меняет статус услуги на deleted через SQL UPDATE (soft delete)
       parameters:
@@ -279,37 +283,7 @@ paths:
       summary: Логически удалить услугу
       tags:
       - languages
-    get:
-      description: Возвращает первую опубликованную услугу или конкретную по id. С
-        ?next=true возвращает следующую за указанной
-      parameters:
-      - description: ID языка
-        in: path
-        name: id
-        type: integer
-      - description: Если true — следующая за указанной
-        in: query
-        name: next
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ds.FeedSerializer'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ds.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ds.ErrorResponse'
-      summary: Лента языков
-      tags:
-      - languages
-  /api/languages/{id}/like:
+  /api/swadesh-lists/{id}/like:
     post:
       consumes:
       - application/json
@@ -344,7 +318,7 @@ paths:
       summary: Поставить/снять лайк
       tags:
       - languages
-  /api/languages/{id}/publish:
+  /api/swadesh-lists/{id}/publish:
     put:
       consumes:
       - application/json
@@ -375,7 +349,7 @@ paths:
       summary: Опубликовать услугу
       tags:
       - languages
-  /api/languages/draft:
+  /api/swadesh-lists/draft:
     get:
       description: Возвращает черновик авторизованного пользователя (не более одного)
       produces:
@@ -396,6 +370,37 @@ paths:
       security:
       - BearerAuth: []
       summary: Черновик текущего пользователя
+      tags:
+      - languages
+  /api/swadesh-lists/feed:
+    get:
+      description: Возвращает первую опубликованную услугу или конкретную по id (в
+        query). С ?next=true возвращает следующую.
+      parameters:
+      - description: ID языка
+        in: query
+        name: id
+        type: integer
+      - description: Если true — следующая за указанной
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.FeedSerializer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      summary: Лента языков
       tags:
       - languages
 securityDefinitions:
