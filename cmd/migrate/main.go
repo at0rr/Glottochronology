@@ -38,14 +38,13 @@ func main() {
 		}
 	}
 
-	// 2. Добавляем пару базовых атрибутов для тестов (если их еще нет)
+	// Создаём ровно 2 атрибута по теме
 	var attrCount int64
 	db.Model(&ds.Attribute{}).Count(&attrCount)
 	if attrCount == 0 {
 		attrs := []ds.Attribute{
-			{Name: "Языковая семья"},
-			{Name: "Регион"},
-			{Name: "Количество носителей"},
+			{ID: 1, Name: "Языковая семья"},
+			{ID: 2, Name: "Размер списка"},
 		}
 		if err := db.Create(&attrs).Error; err != nil {
 			panic("error creating default attributes: " + err.Error())
