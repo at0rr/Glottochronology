@@ -33,6 +33,7 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 
 	// --- ПУБЛИЧНЫЕ API маршруты (без авторизации) ---
 	api := router.Group("/api")
+	api.Use(middleware.OptionalJWTAuth(h.Redis))
 	{
 		api.POST("/auth/register", h.APIRegister)
 		api.POST("/auth/login", h.APILogin)
