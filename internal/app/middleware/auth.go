@@ -106,3 +106,12 @@ func OptionalJWTAuth(redisClient *redis.Client) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func CurrentUserRole(c *gin.Context) role.Role {
+	if v, ok := c.Get("userRole"); ok {
+		if r, ok := v.(role.Role); ok {
+			return r
+		}
+	}
+	return role.User // По умолчанию обычный юзер
+}

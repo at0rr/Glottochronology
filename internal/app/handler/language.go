@@ -9,6 +9,7 @@ import (
 
 	"glottochronology/internal/app/ds"
 	"glottochronology/internal/app/middleware"
+	"glottochronology/internal/app/role"
 )
 
 // ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
@@ -289,6 +290,24 @@ func (h *Handler) APIDeleteLanguage(c *gin.Context) {
 		return
 	}
 
+	// 1. Получаем карточку из БД, чтобы узнать, кто её создал
+	lang, err := h.Repository.GetByID(id)
+	if err != nil || lang == nil {
+		c.JSON(http.StatusNotFound, ds.NewError("Услуга не найдена"))
+		return
+	}
+
+	// 2. Узнаем ID и роль того, кто делает запрос
+	userID := middleware.CurrentUserID(c)
+	userRole := middleware.CurrentUserRole(c) // Эта функция должна быть в middleware/auth.go
+
+	// 3. Проверяем: если это НЕ админ (роль не 2) И это НЕ создатель карточки -> запрещаем
+	if userRole != role.Admin && lang.CreatorID != userID {
+		c.JSON(http.StatusForbidden, ds.NewError("Вы можете удалять только свои карточки"))
+		return
+	}
+
+	// 4. Если проверка пройдена - удаляем
 	if err := h.Repository.SoftDelete(uint(id)); err != nil {
 		c.JSON(http.StatusNotFound, ds.NewError(err.Error()))
 		return

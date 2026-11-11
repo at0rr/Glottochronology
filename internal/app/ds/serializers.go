@@ -97,12 +97,14 @@ func NewFeedSerializer(l Language, likes int64, currentUserID uint, isLiked bool
 type UserSerializer struct {
 	ID        uint   `json:"id"`
 	Login     string `json:"login"`
+	Role  int    `json:"role"`
 }
 
 func NewUserSerializer(u User) UserSerializer {
 	return UserSerializer{
 		ID:    u.ID,
 		Login: u.Login,
+		Role:  int(u.Role),
 	}
 }
 
