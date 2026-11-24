@@ -122,3 +122,33 @@ func (r *Repository) SoftDelete(id uint) error {
 	}
 	return nil
 }
+
+// GetAllAttributes возвращает список всех доступных атрибутов (Языковая семья, Размер списка)
+func (r *Repository) GetAllAttributes() ([]ds.Attribute, error) {
+	var attrs []ds.Attribute
+	err := r.db.Find(&attrs).Error
+	return attrs, err
+}
+
+// SaveAttributes сохраняет атрибуты для услуги
+func (r *Repository) SaveAttributes(languageID uint, attrs map[uint]string) error {
+	for attrID, val := range attrs {
+		var av ds.AttributeValue
+		// Ищем, есть ли уже такой атрибут у этой услуги
+		err := r.db.Where("swadesh_list_id = ? AND attribute_id = ?", languageID, attrID).First(&av).Error
+		if err == nil {
+			// Если есть - обновляем значение
+			av.Value = val
+			r.db.Save(&av)
+		} else {
+			// Если нет - создаем новый
+			av = ds.AttributeValue{
+				SwadeshListID: languageID,
+				AttributeID:   attrID,
+				Value:         val,
+			}
+			r.db.Create(&av)
+		}
+	}
+	return nil
+}

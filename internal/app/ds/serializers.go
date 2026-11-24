@@ -108,22 +108,19 @@ func NewUserSerializer(u User) UserSerializer {
 	}
 }
 
+// Оставляем структуру, но убираем лишние поля
 type ErrorResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	Error string `json:"error"`
 }
 
+// Функция теперь возвращает только поле error
 func NewError(message string) ErrorResponse {
-	return ErrorResponse{Status: "error", Message: message}
+	return ErrorResponse{Error: message}
 }
 
+// Теперь функция просто отдает данные как есть
 func Success(data interface{}) interface{} {
 	return data
-}
-
-type SuccessResponse struct {
-	Status string      `json:"status"`
-	Data   interface{} `json:"data"`
 }
 
 type LikeResponse struct {

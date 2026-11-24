@@ -152,13 +152,37 @@ func (h *Handler) APIGetDraft(c *gin.Context) {
 	userID := middleware.CurrentUserID(c)
 	draft, err := h.Repository.GetDraftByCreator(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ds.NewError(err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	if draft == nil {
-		c.JSON(http.StatusNotFound, ds.NewError("черновик не найден"))
+		c.JSON(http.StatusNotFound, gin.H{"error": "черновик не найден"})
 		return
 	}
+
+	// --- НОВАЯ ЛОГИКА ДЛЯ АТРИБУТОВ ---
+	// Получаем список всех 2 атрибутов из БД
+	allAttrs, err := h.Repository.GetAllAttributes()
+	if err == nil && len(allAttrs) > 0 {
+		// Собираем существующие значения черновика в мапу для быстрого поиска
+		existingValues := make(map[uint]string)
+		for _, av := range draft.Attributes {
+			existingValues[av.AttributeID] = av.Value
+		}
+
+		// Формируем полный список атрибутов (даже если значения пустые)
+		var finalAttrs []ds.AttributeValue
+		for _, attr := range allAttrs {
+			finalAttrs = append(finalAttrs, ds.AttributeValue{
+				SwadeshListID: draft.ID,
+				AttributeID:   attr.ID,
+				Value:         existingValues[attr.ID], // Если значения нет, будет пустая строка ""
+				Attribute:     attr,
+			})
+		}
+		draft.Attributes = finalAttrs
+	}
+	// ----------------------------------
 
 	pubURL := h.Repository.PublicURL()
 	isLiked := h.Repository.HasLike(userID, draft.ID)
@@ -247,10 +271,11 @@ func (h *Handler) APIPublishLanguage(c *gin.Context) {
 	}
 
 	var body struct {
-		Title          string `json:"title"`
-		Description    string `json:"description"`
-		MatchPercent   int    `json:"match_percent"`
-		DivergenceDate string `json:"divergence_date"`
+		Title          string          `json:"title"`
+		Description    string          `json:"description"`
+		MatchPercent   int             `json:"match_percent"`
+		DivergenceDate string          `json:"divergence_date"`
+		Attributes     map[uint]string `json:"attributes"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		body.Title = c.PostForm("title")
@@ -268,6 +293,9 @@ func (h *Handler) APIPublishLanguage(c *gin.Context) {
 	if lang == nil {
 		c.JSON(http.StatusInternalServerError, ds.NewError("не удалось получить услугу"))
 		return
+	}
+	if body.Attributes != nil {
+		h.Repository.SaveAttributes(uint(id), body.Attributes)
 	}
 
 	userID := middleware.CurrentUserID(c)
@@ -346,10 +374,10 @@ func (h *Handler) APILikeLanguage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, ds.Success(map[string]interface{}{
+	c.JSON(http.StatusOK, map[string]interface{}{
 		"likes": h.Repository.GetLikeCount(uint(id)),
 		"liked": h.Repository.HasLike(userID, uint(id)),
-	}))
+	})
 }
 
 // ============ HTML-МЕТОДЫ (Для браузера) ============
